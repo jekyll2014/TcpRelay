@@ -64,23 +64,6 @@ namespace TcpRelay
             }
         }
 
-        void SendStringCollect()
-        {
-            string tmpStr;
-            if (checkBox_commandhex.Checked == true) tmpStr = textBox_command.Text.Trim();
-            else tmpStr = Accessory.ConvertStringToHex(textBox_command.Text).Trim();
-            if (checkBox_paramhex.Checked == true) tmpStr += " " + textBox_params.Text.Trim();
-            else tmpStr += " " + Accessory.ConvertStringToHex(textBox_params.Text).Trim();
-            if (checkBox_cr.Checked == true) tmpStr += " 0D";
-            if (checkBox_lf.Checked == true) tmpStr += " 0A";
-            if (checkBox_suff.Checked == true)
-            {
-                if (checkBox_suffhex.Checked == true) tmpStr += " " + textBox_suff.Text.Trim();
-                else tmpStr += " " + Accessory.ConvertStringToHex(textBox_suff.Text).Trim();
-            }
-            textBox_senddata.Text = Accessory.CheckHexString(tmpStr);
-        }
-
         private object threadLock = new object();
         public void collectBuffer(string tmpBuffer, int state, string time)
         {
@@ -247,15 +230,6 @@ namespace TcpRelay
             column.Width = 30;
 
             //load settings
-            textBox_command.Text = TcpRelay.Properties.Settings.Default.DefaultCommand;
-            checkBox_commandhex.Checked = TcpRelay.Properties.Settings.Default.DefaultCommandHex;
-            textBox_params.Text = TcpRelay.Properties.Settings.Default.DefaultParameter;
-            checkBox_paramhex.Checked = TcpRelay.Properties.Settings.Default.DefaultParamHex;
-            checkBox_cr.Checked = TcpRelay.Properties.Settings.Default.addCR;
-            checkBox_lf.Checked = TcpRelay.Properties.Settings.Default.addLF;
-            checkBox_suff.Checked = TcpRelay.Properties.Settings.Default.addSuff;
-            textBox_suff.Text = TcpRelay.Properties.Settings.Default.SuffText;
-            checkBox_suffhex.Checked = TcpRelay.Properties.Settings.Default.DefaultSuffHex;
             checkBox_insTime.Checked = TcpRelay.Properties.Settings.Default.LogTime;
             checkBox_insDir.Checked = TcpRelay.Properties.Settings.Default.LogDir;
             checkBox_ServerHex.Checked = TcpRelay.Properties.Settings.Default.HexPort1;
@@ -277,11 +251,9 @@ namespace TcpRelay
             textBox_clientPort.Text = TcpRelay.Properties.Settings.Default.DefaultClientPort;
 
             serverName = textBox_serverName.Text;
-            checkBox_sendServer.Text = textBox_serverName.Text;
             checkBox_ServerHex.Text = textBox_serverName.Text;
 
             clientName = textBox_clientName.Text;
-            checkBox_sendClient.Text = textBox_clientName.Text;
             checkBox_ClientHex.Text = textBox_clientName.Text;
 
             serverPort = int.Parse(textBox_serverPort.Text);
@@ -391,7 +363,6 @@ namespace TcpRelay
             textBox_serverPort.Enabled = true;
             textBox_clientIP.Enabled = true;
             textBox_clientPort.Enabled = true;
-            button_send.Enabled = false;
             button_start.Enabled = true;
             button_stop.Enabled = false;
             ClientStatusChanged("Stopped listening to " + textBox_clientIP.Text + ":" + textBox_clientPort.Text);
@@ -570,105 +541,10 @@ namespace TcpRelay
             if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1["Date"] + "," + dataRowPIN1["Time"] + "," + dataRowPIN1["Milis"] + "," + dataRowPIN1["Port"] + "," + dataRowPIN1["Dir"] + "," + dataRowPIN1["Data"] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1["Mark"] + "\r\n");
         }
 
-        private void textBox_custom_command_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (checkBox_commandhex.Checked == true)
-            {
-                char c = e.KeyChar;
-                if (c != '\b' && !((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c >= '0' && c <= '9' || c == 0x08 || c == ' ')))
-                {
-                    e.Handled = true;
-                }
-            }
-        }
-
-        private void textBox_params_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (checkBox_paramhex.Checked == true)
-            {
-                char c = e.KeyChar;
-                if (c != '\b' && !((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c >= '0' && c <= '9' || c == 0x08 || c == ' ')))
-                {
-                    e.Handled = true;
-                }
-            }
-        }
-
-        private void textBox_suff_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            char c = e.KeyChar;
-            if (c != '\b' && !((c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') || (c >= '0' && c <= '9' || c == 0x08 || c == ' ')))
-            {
-                e.Handled = true;
-            }
-        }
-
-        private void checkBox_suff_CheckedChanged(object sender, EventArgs e)
-        {
-            if (checkBox_suff.Checked == true) textBox_suff.Enabled = false;
-            else textBox_suff.Enabled = true;
-            SendStringCollect();
-        }
-
         private void button_clear1_Click(object sender, EventArgs e)
         {
             textBox_terminal1.Clear();
             CSVdataTable.Rows.Clear();
-        }
-
-        private void checkBox_commandhex_CheckedChanged(object sender, EventArgs e)
-        {
-            string tmpstr = textBox_command.Text;
-            if (checkBox_commandhex.Checked == true) textBox_command.Text = Accessory.ConvertStringToHex(tmpstr);
-            else textBox_command.Text = Accessory.ConvertHexToString(tmpstr);
-        }
-
-        private void checkBox_paramhex_CheckedChanged(object sender, EventArgs e)
-        {
-            string tmpstr = textBox_params.Text;
-            if (checkBox_paramhex.Checked == true) textBox_params.Text = Accessory.ConvertStringToHex(tmpstr);
-            else textBox_params.Text = Accessory.ConvertHexToString(tmpstr);
-        }
-
-        private void checkBox_send_CheckedChanged(object sender, EventArgs e)
-        {
-            if (checkBox_sendServer.Checked == false && checkBox_sendClient.Checked == false) button_send.Enabled = false;
-            //else button_send.Enabled = true;
-        }
-
-        private void textBox_command_Leave(object sender, EventArgs e)
-        {
-            if (checkBox_commandhex.Checked == true) textBox_command.Text = Accessory.CheckHexString(textBox_command.Text);
-            SendStringCollect();
-        }
-
-        private void textBox_params_Leave(object sender, EventArgs e)
-        {
-            if (checkBox_paramhex.Checked == true) textBox_params.Text = Accessory.CheckHexString(textBox_params.Text);
-            SendStringCollect();
-        }
-
-        private void textBox_suff_Leave(object sender, EventArgs e)
-        {
-            if (checkBox_suffhex.Checked == true) textBox_suff.Text = Accessory.CheckHexString(textBox_suff.Text);
-            SendStringCollect();
-        }
-
-        private void checkBox_cr_CheckedChanged(object sender, EventArgs e)
-        {
-            SendStringCollect();
-        }
-
-        private void checkBox_lf_CheckedChanged(object sender, EventArgs e)
-        {
-            SendStringCollect();
-        }
-
-        private void checkBox_suffhex_CheckedChanged(object sender, EventArgs e)
-        {
-            string tmpstr = textBox_suff.Text;
-            if (checkBox_suffhex.Checked == true) textBox_suff.Text = Accessory.ConvertStringToHex(tmpstr);
-            else textBox_suff.Text = Accessory.ConvertHexToString(tmpstr);
         }
 
         private void saveFileDialog1_FileOk(object sender, CancelEventArgs e)
@@ -742,15 +618,6 @@ namespace TcpRelay
 
         private void saveParametersToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            TcpRelay.Properties.Settings.Default.DefaultCommand = textBox_command.Text;
-            TcpRelay.Properties.Settings.Default.DefaultCommandHex = checkBox_commandhex.Checked;
-            TcpRelay.Properties.Settings.Default.DefaultParameter = textBox_params.Text;
-            TcpRelay.Properties.Settings.Default.DefaultParamHex = checkBox_paramhex.Checked;
-            TcpRelay.Properties.Settings.Default.addCR = checkBox_cr.Checked;
-            TcpRelay.Properties.Settings.Default.addLF = checkBox_lf.Checked;
-            TcpRelay.Properties.Settings.Default.addSuff = checkBox_suff.Checked;
-            TcpRelay.Properties.Settings.Default.SuffText = textBox_suff.Text;
-            TcpRelay.Properties.Settings.Default.DefaultSuffHex = checkBox_suffhex.Checked;
             TcpRelay.Properties.Settings.Default.LogTime = checkBox_insTime.Checked;
             TcpRelay.Properties.Settings.Default.LogDir = checkBox_insDir.Checked;
             TcpRelay.Properties.Settings.Default.HexPort1 = checkBox_ServerHex.Checked;
@@ -841,20 +708,6 @@ namespace TcpRelay
         {
             if (checkBox_Mark.Checked == true) checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Bold);
             else checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Regular);
-        }
-
-        private void textBox_command_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (button_send.Enabled == true)
-                if (e.KeyData == Keys.Return) ;
-                    //button_send_Click(textBox_command, EventArgs.Empty);
-        }
-
-        private void textBox_params_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (button_send.Enabled == true)
-                if (e.KeyData == Keys.Return) ;
-                    //button_send_Click(textBox_command, EventArgs.Empty);
         }
 
         private void toolStripTextBox1_TextChanged(object sender, EventArgs e)
@@ -1079,14 +932,12 @@ namespace TcpRelay
         private void textBox_serverName_Leave(object sender, EventArgs e)
         {
             serverName = textBox_serverName.Text;
-            checkBox_sendServer.Text = textBox_serverName.Text;
             checkBox_ServerHex.Text = textBox_serverName.Text;
         }
 
         private void textBox_clientName_Leave(object sender, EventArgs e)
         {
             clientName = textBox_clientName.Text;
-            checkBox_sendClient.Text = textBox_clientName.Text;
             checkBox_ClientHex.Text = textBox_clientName.Text;
         }
 

@@ -11,24 +11,6 @@
     <Setting Name="CSVlogFile" Type="System.String" Scope="User">
       <Value Profile="(Default)">terminal.csv</Value>
     </Setting>
-    <Setting Name="DefaultCommand" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="DefaultParameter" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="addCR" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="addLF" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="addSuff" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="SuffText" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="LogTime" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
@@ -62,20 +44,11 @@
     <Setting Name="LogGrid" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="DefaultCommandHex" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
-    <Setting Name="DefaultParamHex" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
     <Setting Name="SendTimeOut" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">1500</Value>
     </Setting>
     <Setting Name="ReceiveTimeOut" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">1500</Value>
-    </Setting>
-    <Setting Name="DefaultSuffHex" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="Codepages_list" Type="System.String" Scope="User">
       <Value Profile="(Default)">https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx</Value>

@@ -61,78 +61,6 @@ namespace TcpRelay.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DefaultCommand {
-            get {
-                return ((string)(this["DefaultCommand"]));
-            }
-            set {
-                this["DefaultCommand"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DefaultParameter {
-            get {
-                return ((string)(this["DefaultParameter"]));
-            }
-            set {
-                this["DefaultParameter"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool addCR {
-            get {
-                return ((bool)(this["addCR"]));
-            }
-            set {
-                this["addCR"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool addLF {
-            get {
-                return ((bool)(this["addLF"]));
-            }
-            set {
-                this["addLF"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool addSuff {
-            get {
-                return ((bool)(this["addSuff"]));
-            }
-            set {
-                this["addSuff"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SuffText {
-            get {
-                return ((string)(this["SuffText"]));
-            }
-            set {
-                this["SuffText"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool LogTime {
             get {
@@ -265,30 +193,6 @@ namespace TcpRelay.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool DefaultCommandHex {
-            get {
-                return ((bool)(this["DefaultCommandHex"]));
-            }
-            set {
-                this["DefaultCommandHex"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool DefaultParamHex {
-            get {
-                return ((bool)(this["DefaultParamHex"]));
-            }
-            set {
-                this["DefaultParamHex"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1500")]
         public int SendTimeOut {
             get {
@@ -308,18 +212,6 @@ namespace TcpRelay.Properties {
             }
             set {
                 this["ReceiveTimeOut"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool DefaultSuffHex {
-            get {
-                return ((bool)(this["DefaultSuffHex"]));
-            }
-            set {
-                this["DefaultSuffHex"] = value;
             }
         }
         

@@ -30,11 +30,8 @@ namespace TcpRelay
         public static NetworkStream ClientNetworkStream;
         public static int clientPort = 0;
 
-
         public DataTable CSVdataTable = new DataTable("Logs");
         string serverName, clientName;
-        int txtOutState = 0;
-        long oldTicks = DateTime.Now.Ticks, limitTick = 0;
 
         public const byte ServerDataIn = 11;
         public const byte ServerDataOut = 12;
@@ -64,6 +61,18 @@ namespace TcpRelay
             }
         }
 
+        public class gridColumns
+        {
+            public static string Date { get; } = "Date";
+            public static string Time { get; } = "Time";
+            public static string Milis { get; } = "Milis";
+            public static string Port { get; } = "Port";
+            public static string Dir { get; } = "Dir";
+            public static string Data { get; } = "Data";
+            public static string Signal { get; } = "Signal";
+            public static string Mark { get; } = "Mark";
+        }
+
         private object threadLock = new object();
         public void collectBuffer(string tmpBuffer, int state, string time)
         {
@@ -71,44 +80,44 @@ namespace TcpRelay
             {
                 lock (threadLock)
                 {
-                    if (!(txtOutState == state && (DateTime.Now.Ticks - oldTicks) < limitTick && state != 12 && state != 22))
+                    //if (!(txtOutState == state && state != ServerDataOut && state != ClientDataOut))
+                    //{
+                    if (state == ServerDataIn)
                     {
-                        if (state == ServerDataIn)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "<< " + tmpBuffer;
-                        }
-                        else if (state == ServerDataOut)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = serverName + ">> " + tmpBuffer;
-                        }
-                        else if (state == ServerSignal)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "==" + tmpBuffer;
-                        }
-                        else if (state == ServerError)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "!!" + tmpBuffer;
-                        }
-                        else if (state == ClientDataIn)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "<< " + tmpBuffer;
-                        }
-                        else if (state == ClientDataOut)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = clientName + ">> " + tmpBuffer;
-                        }
-                        else if (state == ClientSignal)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "==" + tmpBuffer;
-                        }
-                        else if (state == ClientError)
-                        {
-                            if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "!!" + tmpBuffer;
-                        }
-                        if (checkBox_insTime.Checked == true) tmpBuffer = time + " " + tmpBuffer;
-                        tmpBuffer = "\r\n" + tmpBuffer;
-                        txtOutState = state;
+                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "<< " + tmpBuffer;
                     }
+                    else if (state == ServerDataOut)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + ">> " + tmpBuffer;
+                    }
+                    else if (state == ServerSignal)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "==" + tmpBuffer;
+                    }
+                    else if (state == ServerError)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "!!" + tmpBuffer;
+                    }
+                    else if (state == ClientDataIn)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "<< " + tmpBuffer;
+                    }
+                    else if (state == ClientDataOut)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + ">> " + tmpBuffer;
+                    }
+                    else if (state == ClientSignal)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "==" + tmpBuffer;
+                    }
+                    else if (state == ClientError)
+                    {
+                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "!!" + tmpBuffer;
+                    }
+                    if (checkBox_insTime.Checked == true) tmpBuffer = time + " " + tmpBuffer;
+                    tmpBuffer = "\r\n" + tmpBuffer;
+                    //txtOutState = state;
+                    //}
                     if (autosaveTXTToolStripMenuItem1.Checked == true)
                     {
                         try
@@ -121,7 +130,6 @@ namespace TcpRelay
                         }
                     }
                     if (logToTextToolStripMenuItem.Checked == true) SetText(tmpBuffer);
-                    oldTicks = DateTime.Now.Ticks;
                 }
             }
         }
@@ -146,10 +154,6 @@ namespace TcpRelay
         {
             lock (threadLock)
             {
-                /*DataRow dataRowIN = null;
-                dataRowIN = CSVdataTable.NewRow();
-                dataRowIN = tmpDataRow;
-                CSVdataTable.Rows.Add(dataRowIN);*/
                 CSVdataTable.Rows.Add(tmpDataRow);
             }
         }
@@ -163,67 +167,67 @@ namespace TcpRelay
             dataGridView.DataSource = CSVdataTable;
             //create columns
             DataColumn colDate;
-            colDate = new DataColumn("Date", typeof(string));
+            colDate = new DataColumn(gridColumns.Date, typeof(string));
             DataColumn colTime;
-            colTime = new DataColumn("Time", typeof(string));
+            colTime = new DataColumn(gridColumns.Time, typeof(string));
             DataColumn colMilis;
-            colMilis = new DataColumn("Milis", typeof(string));
+            colMilis = new DataColumn(gridColumns.Milis, typeof(string));
             DataColumn colPort;
-            colPort = new DataColumn("Port", typeof(string));
+            colPort = new DataColumn(gridColumns.Port, typeof(string));
             DataColumn colDir;
-            colDir = new DataColumn("Dir", typeof(string));
+            colDir = new DataColumn(gridColumns.Dir, typeof(string));
             DataColumn colData;
-            colData = new DataColumn("Data", typeof(string));
+            colData = new DataColumn(gridColumns.Data, typeof(string));
             DataColumn colSig;
-            colSig = new DataColumn("Signal", typeof(string));
+            colSig = new DataColumn(gridColumns.Signal, typeof(string));
             DataColumn colMark;
-            colMark = new DataColumn("Mark", typeof(bool));
+            colMark = new DataColumn(gridColumns.Mark, typeof(bool));
             //add columns to the table
             CSVdataTable.Columns.AddRange(new DataColumn[] { colDate, colTime, colMilis, colPort, colDir, colData, colSig, colMark });
 
-            DataGridViewColumn column = dataGridView.Columns[0];
+            DataGridViewColumn column = dataGridView.Columns[gridColumns.Date];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 70;
             column.Width = 70;
 
-            column = dataGridView.Columns[1];
+            column = dataGridView.Columns[gridColumns.Time];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 55;
             column.Width = 55;
 
-            column = dataGridView.Columns[2];
+            column = dataGridView.Columns[gridColumns.Milis];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 30;
 
-            column = dataGridView.Columns[3];
+            column = dataGridView.Columns[gridColumns.Port];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 40;
 
-            column = dataGridView.Columns[4];
+            column = dataGridView.Columns[gridColumns.Dir];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 30;
 
-            column = dataGridView.Columns[5];
+            column = dataGridView.Columns[gridColumns.Data];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 200;
             column.Width = 250;
 
-            column = dataGridView.Columns[6];
-            column.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.None;
+            column = dataGridView.Columns[gridColumns.Signal];
+            column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 60;
             column.Width = 60;
 
-            column = dataGridView.Columns[7];
+            column = dataGridView.Columns[gridColumns.Mark];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
@@ -243,8 +247,6 @@ namespace TcpRelay
             terminaltxtToolStripMenuItem1.Text = TcpRelay.Properties.Settings.Default.TXTlogFile;
             autosaveCSVToolStripMenuItem1.Checked = TcpRelay.Properties.Settings.Default.AutoLogCSV;
             terminalcsvToolStripMenuItem1.Text = TcpRelay.Properties.Settings.Default.CSVlogFile;
-            LineBreakToolStripTextBox1.Text = TcpRelay.Properties.Settings.Default.LineBreakTimeout.ToString();
-            limitTick = TcpRelay.Properties.Settings.Default.LineBreakTimeout * 10000;
             textBox_serverIP.Text = TcpRelay.Properties.Settings.Default.DefaultServerIP;
             textBox_clientIP.Text = TcpRelay.Properties.Settings.Default.DefaultClientIP;
             textBox_serverPort.Text = TcpRelay.Properties.Settings.Default.DefaultServerPort;
@@ -368,123 +370,60 @@ namespace TcpRelay
             ClientStatusChanged("Stopped listening to " + textBox_clientIP.Text + ":" + textBox_clientPort.Text);
         }
 
-        private void button_send_Click(object sender, EventArgs e)
-        {
-            /*if (textBox_senddata.Text != "")
-            {
-                string outStr = "";
-                if (checkBox_send1.Checked == true)
-                {
-                    DataRow dataRowTX1 = null;
-                    //create new row in datatable
-                    dataRowTX1 = CSVdataTable.NewRow();
-                    dataRowTX1["Date"] = DateTime.Today.ToShortDateString();
-                    dataRowTX1["Time"] = DateTime.Now.ToLongTimeString();
-                    dataRowTX1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-                    dataRowTX1["Port"] = portname1;
-                    dataRowTX1["Dir"] = "TX";
-                    try
-                    {
-                        serialPort1.Write(Accessory.ConvertHexToByteArray(textBox_senddata.Text), 0, textBox_senddata.Text.Length / 3);
-                    }
-                    catch (Exception ex)
-                    {
-                        //dataRowTX1["Signal"] = "Error sending to port " + serialPort1.PortName + ": " + ex.Message;
-                    }
-                    dataRowTX1["Data"] = textBox_senddata.Text;
-                    dataRowTX1["Mark"] = checkBox_Mark.Checked;
-                    if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowTX1);
-                    if (checkBox_t1hex.Checked == true) outStr += textBox_senddata.Text;
-                    else outStr += Accessory.ConvertHexToString(textBox_senddata.Text);
-                    collectBuffer(outStr, Port1DataOut, dataRowTX1["Date"] + " " + dataRowTX1["Time"] + "." + dataRowTX1["Milis"]);
-                    if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowTX1["Date"] + "," + dataRowTX1["Time"] + "," + dataRowTX1["Milis"] + "," + dataRowTX1["Port"] + "," + dataRowTX1["Dir"] + "," + dataRowTX1["Data"] + "," + "," + dataRowTX1["Mark"] + "\r\n");
-                }
-
-                if (checkBox_send2.Checked == true)
-                {
-                    DataRow dataRowTX2 = null;
-                    //создаём новую строку
-                    dataRowTX2 = CSVdataTable.NewRow();
-                    dataRowTX2["Date"] = DateTime.Today.ToShortDateString();
-                    dataRowTX2["Time"] = DateTime.Now.ToLongTimeString();
-                    dataRowTX2["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-                    dataRowTX2["Port"] = portname2;
-                    dataRowTX2["Dir"] = "TX";
-                    try
-                    {
-                        serialPort2.Write(Accessory.ConvertHexToByteArray(textBox_senddata.Text), 0, textBox_senddata.Text.Length / 3);
-                    }
-                    catch (Exception ex)
-                    {
-                        //dataRowTX2["Signal"] = "Error sending to port " + serialPort2.PortName + ": " + ex.Message;
-
-                    }
-                    dataRowTX2["Data"] = textBox_senddata.Text;
-                    dataRowTX2["Mark"] = checkBox_Mark.Checked;
-                    if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowTX2);
-                    outStr = "";
-                    if (checkBox_t2hex.Checked == true) outStr += textBox_senddata.Text;
-                    else outStr += Accessory.ConvertHexToString(textBox_senddata.Text);
-                    collectBuffer(outStr, Port2DataOut, dataRowTX2["Date"] + " " + dataRowTX2["Time"] + "." + dataRowTX2["Milis"]);
-                    if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowTX2["Date"] + "," + dataRowTX2["Time"] + "," + dataRowTX2["Milis"] + "," + dataRowTX2["Port"] + "," + dataRowTX2["Dir"] + "," + dataRowTX2["Data"] + "," + "," + dataRowTX2["Mark"] + "\r\n");
-                }
-            }*/
-        }
-
         private void client_DataReceived(byte[] rx1)
         {
             DataRow dataRowRX1 = null;
             dataRowRX1 = CSVdataTable.NewRow();
-            dataRowRX1["Date"] = DateTime.Today.ToShortDateString();
-            dataRowRX1["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowRX1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowRX1["Port"] = serverName;
-            dataRowRX1["Dir"] = "RX";
-            dataRowRX1["Mark"] = checkBox_Mark.Checked;
-            dataRowRX1["Data"] = Accessory.ConvertByteArrayToHex(rx1);
+            dataRowRX1[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowRX1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowRX1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowRX1[gridColumns.Port] = serverName;
+            dataRowRX1[gridColumns.Dir] = "RX";
+            dataRowRX1[gridColumns.Mark] = checkBox_Mark.Checked;
+            dataRowRX1[gridColumns.Data] = Accessory.ConvertByteArrayToHex(rx1);
             if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowRX1);
             string outStr1 = "";
-            if (checkBox_ServerHex.Checked == true) outStr1 += dataRowRX1["Data"];
+            if (checkBox_ServerHex.Checked == true) outStr1 += dataRowRX1[gridColumns.Data];
             else outStr1 += Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage).GetString(rx1, 0, rx1.Length);
-            collectBuffer(outStr1, ServerDataIn, dataRowRX1["Date"] + " " + dataRowRX1["Time"] + "." + dataRowRX1["Milis"]);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX1["Date"] + "," + dataRowRX1["Time"] + "," + dataRowRX1["Milis"] + "," + dataRowRX1["Port"] + "," + dataRowRX1["Dir"] + "," + dataRowRX1["Data"] + "," + "," + dataRowRX1["Mark"] + "\r\n");
+            collectBuffer(outStr1, ServerDataIn, dataRowRX1[gridColumns.Date] + " " + dataRowRX1[gridColumns.Time] + "." + dataRowRX1[gridColumns.Milis]);
+            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX1[gridColumns.Date] + "," + dataRowRX1[gridColumns.Time] + "," + dataRowRX1[gridColumns.Milis] + "," + dataRowRX1[gridColumns.Port] + "," + dataRowRX1[gridColumns.Dir] + "," + dataRowRX1[gridColumns.Data] + "," + "," + dataRowRX1[gridColumns.Mark] + "\r\n");
         }
 
         private void server_DataReceived(byte[] rx2)
         {
             DataRow dataRowRX2 = null;
             dataRowRX2 = CSVdataTable.NewRow();
-            dataRowRX2["Date"] = DateTime.Today.ToShortDateString();
-            dataRowRX2["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowRX2["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowRX2["Port"] = clientName;
-            dataRowRX2["Dir"] = "RX";
-            dataRowRX2["Data"] = Accessory.ConvertByteArrayToHex(rx2);
-            dataRowRX2["Mark"] = checkBox_Mark.Checked;
+            dataRowRX2[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowRX2[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowRX2[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowRX2[gridColumns.Port] = clientName;
+            dataRowRX2[gridColumns.Dir] = "RX";
+            dataRowRX2[gridColumns.Data] = Accessory.ConvertByteArrayToHex(rx2);
+            dataRowRX2[gridColumns.Mark] = checkBox_Mark.Checked;
             if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowRX2);
             string outStr2 = "";
-            if (checkBox_ClientHex.Checked == true) outStr2 += dataRowRX2["Data"];
+            if (checkBox_ClientHex.Checked == true) outStr2 += dataRowRX2[gridColumns.Data];
             else outStr2 += System.Text.Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage).GetString(rx2, 0, rx2.Length);
-            collectBuffer(outStr2, ClientDataIn, dataRowRX2["Date"] + " " + dataRowRX2["Time"] + "." + dataRowRX2["Milis"]);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX2["Date"] + "," + dataRowRX2["Time"] + "," + dataRowRX2["Milis"] + "," + dataRowRX2["Port"] + "," + dataRowRX2["Dir"] + "," + dataRowRX2["Data"] + "," + "," + dataRowRX2["Mark"] + "\r\n");
+            collectBuffer(outStr2, ClientDataIn, dataRowRX2[gridColumns.Date] + " " + dataRowRX2[gridColumns.Time] + "." + dataRowRX2[gridColumns.Milis]);
+            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX2[gridColumns.Date] + "," + dataRowRX2[gridColumns.Time] + "," + dataRowRX2[gridColumns.Milis] + "," + dataRowRX2[gridColumns.Port] + "," + dataRowRX2[gridColumns.Dir] + "," + dataRowRX2[gridColumns.Data] + "," + "," + dataRowRX2[gridColumns.Mark] + "\r\n");
         }
 
         private void ServerStatusChanged(string outStr)
         {
             DataRow dataRowPIN1 = null;
             dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1["Date"] = DateTime.Today.ToShortDateString();
-            dataRowPIN1["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1["Port"] = serverName;
-            dataRowPIN1["Dir"] = "-";
-            dataRowPIN1["Mark"] = checkBox_Mark.Checked;
+            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPIN1[gridColumns.Port] = serverName;
+            dataRowPIN1[gridColumns.Dir] = "-";
+            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
             if (outStr != "")
             {
-                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerSignal, dataRowPIN1["Date"] + " " + dataRowPIN1["Time"] + "." + dataRowPIN1["Milis"]);
+                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerSignal, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
                 dataRowPIN1["Signal"] = outStr;
                 if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1["Date"] + "," + dataRowPIN1["Time"] + "," + dataRowPIN1["Milis"] + "," + dataRowPIN1["Port"] + "," + dataRowPIN1["Dir"] + "," + dataRowPIN1["Data"] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1["Mark"] + "\r\n");
+                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
             }
         }
 
@@ -492,18 +431,18 @@ namespace TcpRelay
         {
             DataRow dataRowPIN1 = null;
             dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1["Date"] = DateTime.Today.ToShortDateString();
-            dataRowPIN1["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1["Port"] = clientName;
-            dataRowPIN1["Dir"] = "-";
-            dataRowPIN1["Mark"] = checkBox_Mark.Checked;
+            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPIN1[gridColumns.Port] = clientName;
+            dataRowPIN1[gridColumns.Dir] = "-";
+            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
             if (outStr != "")
             {
-                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientSignal, dataRowPIN1["Date"] + " " + dataRowPIN1["Time"] + "." + dataRowPIN1["Milis"]);
+                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientSignal, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
                 dataRowPIN1["Signal"] = outStr;
                 if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1["Date"] + "," + dataRowPIN1["Time"] + "," + dataRowPIN1["Milis"] + "," + dataRowPIN1["Port"] + "," + dataRowPIN1["Dir"] + "," + dataRowPIN1["Data"] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1["Mark"] + "\r\n");
+                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
             }
         }
 
@@ -511,40 +450,34 @@ namespace TcpRelay
         {
             DataRow dataRowPIN1 = null;
             dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1["Date"] = DateTime.Today.ToShortDateString();
-            dataRowPIN1["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1["Port"] = serverName;
-            dataRowPIN1["Dir"] = "-";
-            dataRowPIN1["Mark"] = checkBox_Mark.Checked;
+            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPIN1[gridColumns.Port] = serverName;
+            dataRowPIN1[gridColumns.Dir] = "-";
+            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
             outStr = "<! Error: " + outStr + "!>";
-            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerError, dataRowPIN1["Date"] + " " + dataRowPIN1["Time"] + "." + dataRowPIN1["Milis"]);
+            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerError, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
             dataRowPIN1["Signal"] = outStr;
             if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1["Date"] + "," + dataRowPIN1["Time"] + "," + dataRowPIN1["Milis"] + "," + dataRowPIN1["Port"] + "," + dataRowPIN1["Dir"] + "," + dataRowPIN1["Data"] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1["Mark"] + "\r\n");
+            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
         }
 
         private void ClientErrorReceived(string outStr)
         {
             DataRow dataRowPIN1 = null;
             dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1["Date"] = DateTime.Today.ToShortDateString();
-            dataRowPIN1["Time"] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1["Milis"] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1["Port"] = clientName;
-            dataRowPIN1["Dir"] = "-";
-            dataRowPIN1["Mark"] = checkBox_Mark.Checked;
+            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPIN1[gridColumns.Port] = clientName;
+            dataRowPIN1[gridColumns.Dir] = "-";
+            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
             outStr = "<! Error: " + outStr + "!>";
-            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientError, dataRowPIN1["Date"] + " " + dataRowPIN1["Time"] + "." + dataRowPIN1["Milis"]);
+            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientError, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
             dataRowPIN1["Signal"] = outStr;
             if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1["Date"] + "," + dataRowPIN1["Time"] + "," + dataRowPIN1["Milis"] + "," + dataRowPIN1["Port"] + "," + dataRowPIN1["Dir"] + "," + dataRowPIN1["Data"] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1["Mark"] + "\r\n");
-        }
-
-        private void button_clear1_Click(object sender, EventArgs e)
-        {
-            textBox_terminal1.Clear();
-            CSVdataTable.Rows.Clear();
+            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
         }
 
         private void saveFileDialog1_FileOk(object sender, CancelEventArgs e)
@@ -632,7 +565,6 @@ namespace TcpRelay
             TcpRelay.Properties.Settings.Default.TXTlogFile = terminaltxtToolStripMenuItem1.Text;
             TcpRelay.Properties.Settings.Default.AutoLogCSV = autosaveCSVToolStripMenuItem1.Checked;
             TcpRelay.Properties.Settings.Default.CSVlogFile = terminalcsvToolStripMenuItem1.Text;
-            TcpRelay.Properties.Settings.Default.LineBreakTimeout = limitTick / 10000;
             TcpRelay.Properties.Settings.Default.DefaultServerIP = textBox_serverIP.Text;
             TcpRelay.Properties.Settings.Default.DefaultClientIP = textBox_clientIP.Text;
             TcpRelay.Properties.Settings.Default.DefaultServerPort = textBox_serverPort.Text;
@@ -710,12 +642,6 @@ namespace TcpRelay
             else checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Regular);
         }
 
-        private void toolStripTextBox1_TextChanged(object sender, EventArgs e)
-        {
-            long.TryParse(LineBreakToolStripTextBox1.Text, out limitTick);
-            limitTick = limitTick * 10000;
-        }
-
         private void textBox_serverPort_Leave(object sender, EventArgs e)
         {
             int.TryParse(textBox_serverPort.Text, out serverPort);
@@ -749,6 +675,12 @@ namespace TcpRelay
             }
         }
 
+        private void button_clear_Click(object sender, EventArgs e)
+        {
+            textBox_terminal1.Clear();
+            CSVdataTable.Rows.Clear();
+        }
+
         private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
         {
             if (e.TabPage == tabPage1 && logToTextToolStripMenuItem.Checked == false)
@@ -780,16 +712,21 @@ namespace TcpRelay
                 try
                 {
                     ClientSocket = clientSocketListener.AcceptTcpClient();
-                    //IPAddress clientAddr = IPAddress.Parse(textBox_clientIP.Text);
-                    /*if (((IPEndPoint)ClientSocket.Client.RemoteEndPoint).Address.ToString() != textBox_clientIP.Text)
+                    IPAddress clientAddr = ((IPEndPoint)ClientSocket.Client.RemoteEndPoint).Address;
+                    if (textBox_clientIP.Text != "")
                     {
-                        ClientSocket.Client.Disconnect(false);
-                        ClientSocket.Close();
-                        ClientSocket = new TcpClient();
-                        return;
-                    }*/
+                        IPAddress setClientAddr;
+                        IPAddress.TryParse(textBox_clientIP.Text, out setClientAddr);
+                        if (clientAddr != setClientAddr)
+                        {
+                            ClientSocket.Client.Disconnect(false);
+                            ClientSocket.Close();
+                            ClientSocket = new TcpClient();
+                            return;
+                        }
+                    }
                     ClientNetworkStream = ClientSocket.GetStream();
-                    ClientStatusChanged("Client connected" + ((IPEndPoint)ClientSocket.Client.RemoteEndPoint).Address.ToString() + ":" + textBox_clientPort.Text);
+                    ClientStatusChanged("Client connected " + clientAddr.ToString() + ":" + textBox_clientPort.Text);
                 }
                 catch (Exception ex)
                 {
@@ -806,7 +743,7 @@ namespace TcpRelay
                     ServerSocket.Client.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
                     ServerNetworkStream = ServerSocket.GetStream();
                     timer1.Enabled = true;
-                    ServerStatusChanged("Connected to server" + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
+                    ServerStatusChanged("Connected to server " + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
                 }
                 catch (Exception ex)
                 {
@@ -877,7 +814,7 @@ namespace TcpRelay
                     ServerSocket.Client.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
                     ServerNetworkStream = ServerSocket.GetStream();
                     timer1.Enabled = true;
-                    ServerStatusChanged("Reconnected to server" + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
+                    ServerStatusChanged("Reconnected to server " + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
                 }
                 catch (Exception ex)
                 {
@@ -941,7 +878,7 @@ namespace TcpRelay
             checkBox_ClientHex.Text = textBox_clientName.Text;
         }
 
-        public static bool ClientConnected()
+        public bool ClientConnected()
         {
             IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
             TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
@@ -962,16 +899,16 @@ namespace TcpRelay
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ClientErrorReceived("Socket closed: " + ex.ToString());
                     return false;
                 }
-
             }
             return false;
         }
 
-        public static bool ServerConnected()
+        public bool ServerConnected()
         {
             IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
             TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
@@ -992,8 +929,9 @@ namespace TcpRelay
                         }
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    ServerErrorReceived("Socket closed: " + ex.ToString());
                     return false;
                 }
             }

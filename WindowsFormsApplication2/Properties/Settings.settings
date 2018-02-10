@@ -53,9 +53,6 @@
     <Setting Name="Codepages_list" Type="System.String" Scope="User">
       <Value Profile="(Default)">https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx</Value>
     </Setting>
-    <Setting Name="LineBreakTimeout" Type="System.Int64" Scope="User">
-      <Value Profile="(Default)">1000</Value>
-    </Setting>
     <Setting Name="LogText" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>

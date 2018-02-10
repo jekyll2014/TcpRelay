@@ -33,7 +33,7 @@ namespace TcpRelay
             this.textBox_terminal1 = new System.Windows.Forms.TextBox();
             this.button_start = new System.Windows.Forms.Button();
             this.button_stop = new System.Windows.Forms.Button();
-            this.button_clear1 = new System.Windows.Forms.Button();
+            this.button_clear = new System.Windows.Forms.Button();
             this.checkBox_insTime = new System.Windows.Forms.CheckBox();
             this.checkBox_ServerHex = new System.Windows.Forms.CheckBox();
             this.saveFileDialog = new System.Windows.Forms.SaveFileDialog();
@@ -124,16 +124,16 @@ namespace TcpRelay
             this.button_stop.UseVisualStyleBackColor = true;
             this.button_stop.Click += new System.EventHandler(this.button_stop_Click);
             // 
-            // button_clear1
+            // button_clear
             // 
-            this.button_clear1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button_clear1.Location = new System.Drawing.Point(333, 294);
-            this.button_clear1.Name = "button_clear1";
-            this.button_clear1.Size = new System.Drawing.Size(67, 25);
-            this.button_clear1.TabIndex = 30;
-            this.button_clear1.Text = "Clear";
-            this.button_clear1.UseVisualStyleBackColor = true;
-            this.button_clear1.Click += new System.EventHandler(this.button_clear1_Click);
+            this.button_clear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.button_clear.Location = new System.Drawing.Point(333, 294);
+            this.button_clear.Name = "button_clear";
+            this.button_clear.Size = new System.Drawing.Size(67, 25);
+            this.button_clear.TabIndex = 30;
+            this.button_clear.Text = "Clear";
+            this.button_clear.UseVisualStyleBackColor = true;
+            this.button_clear.Click += new System.EventHandler(this.button_clear_Click);
             // 
             // checkBox_insTime
             // 
@@ -220,7 +220,7 @@ namespace TcpRelay
             this.dataGridView.RowTemplate.ReadOnly = true;
             this.dataGridView.RowTemplate.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.dataGridView.Size = new System.Drawing.Size(666, 289);
+            this.dataGridView.Size = new System.Drawing.Size(666, 212);
             this.dataGridView.StandardTab = true;
             this.dataGridView.TabIndex = 51;
             this.dataGridView.VirtualMode = true;
@@ -273,7 +273,7 @@ namespace TcpRelay
             this.tabPage2.Location = new System.Drawing.Point(4, 22);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(672, 295);
+            this.tabPage2.Size = new System.Drawing.Size(672, 218);
             this.tabPage2.TabIndex = 0;
             this.tabPage2.Text = "Table";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -391,21 +391,21 @@ namespace TcpRelay
             // saveTXTToolStripMenuItem
             // 
             this.saveTXTToolStripMenuItem.Name = "saveTXTToolStripMenuItem";
-            this.saveTXTToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveTXTToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.saveTXTToolStripMenuItem.Text = "Save .TXT";
             this.saveTXTToolStripMenuItem.Click += new System.EventHandler(this.saveTXTToolStripMenuItem_Click);
             // 
             // saveCSVToolStripMenuItem
             // 
             this.saveCSVToolStripMenuItem.Name = "saveCSVToolStripMenuItem";
-            this.saveCSVToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.saveCSVToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.saveCSVToolStripMenuItem.Text = "Save .CSV";
             this.saveCSVToolStripMenuItem.Click += new System.EventHandler(this.saveCSVToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -509,7 +509,6 @@ namespace TcpRelay
             this.LineBreakToolStripTextBox1.Name = "LineBreakToolStripTextBox1";
             this.LineBreakToolStripTextBox1.Size = new System.Drawing.Size(100, 23);
             this.LineBreakToolStripTextBox1.Text = "1000";
-            this.LineBreakToolStripTextBox1.TextChanged += new System.EventHandler(this.toolStripTextBox1_TextChanged);
             // 
             // saveParametersToolStripMenuItem1
             // 
@@ -603,7 +602,7 @@ namespace TcpRelay
             this.Controls.Add(this.checkBox_Mark);
             this.Controls.Add(this.checkBox_ClientHex);
             this.Controls.Add(this.checkBox_ServerHex);
-            this.Controls.Add(this.button_clear1);
+            this.Controls.Add(this.button_clear);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label18);
             this.Controls.Add(this.label1);
@@ -637,7 +636,7 @@ namespace TcpRelay
         #endregion
         private System.Windows.Forms.Button button_start;
         private System.Windows.Forms.Button button_stop;
-        private System.Windows.Forms.Button button_clear1;
+        private System.Windows.Forms.Button button_clear;
         public System.Windows.Forms.TextBox textBox_terminal1;
         private System.Windows.Forms.CheckBox checkBox_insTime;
         private System.Windows.Forms.CheckBox checkBox_ServerHex;

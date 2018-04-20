@@ -1,0 +1,201 @@
+We could use multi-thread to listen to different port. Please reference the following code that a server listens to multiple ports.
+
+Here is the server code.
+
+ListenPorts is the class that use multi-thread to listen ports.
+
+Server
+
+    class ListenPorts
+
+    {
+
+        Socket[] scon;
+
+        IPEndPoint[] ipPoints;
+
+       internal ListenPorts(IPEndPoint[] ipPoints)
+
+        {
+
+            this.ipPoints = ipPoints;
+
+            scon = new Socket[ipPoints.Length];
+
+        }
+
+ 
+
+        public void beginListen()
+
+        {
+
+            for (int i = 0; i < ipPoints.Length; i++)
+
+            {
+
+                scon[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+                scon[i].Bind(ipPoints[i]);
+
+                Thread thread = new Thread(threadListen);
+
+                thread.Start(scon[i]);
+
+            }
+
+ 
+
+        }
+
+ 
+
+        public void threadListen(object objs)
+
+        {
+
+            Socket scon = objs as Socket;
+
+            byte[] data = new byte[1024];
+
+            IPEndPoint sender = new IPEndPoint(IPAddress.Any, 0);
+
+            EndPoint Remote = (EndPoint)(sender);
+
+            try
+
+            {
+
+                scon.Listen(100);
+
+                Socket newSocket = scon.Accept();
+
+                newSocket.ReceiveFrom(data, ref Remote);
+
+               // scon.ReceiveFrom(data, ref Remote);
+
+            }
+
+            catch (SocketException ex)
+
+            {
+
+                Console.WriteLine(ex.Message);
+
+            }
+
+           Console.WriteLine(scon.LocalEndPoint.ToString() + "IP {0}: ", Remote.ToString());
+
+        }
+
+ 
+
+    }
+
+The main method is used to invoke the class to listen to the ports.
+
+    class Program
+
+    {
+
+        static void Main(string[] args)
+
+        {
+
+            IPEndPoint ipPoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
+
+            IPEndPoint ipPoint1 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8081);
+
+            IPEndPoint[] ipPoints = new IPEndPoint[2] { ipPoint, ipPoint1 };
+
+            ListenPorts lp = new ListenPorts(ipPoints);
+
+            Console.WriteLine("Begin Listen");
+
+            lp.beginListen();
+
+        }
+
+}
+
+Client
+
+Here is the client code that connects to server.
+
+    class Program
+
+    {
+
+        static void Main(string[] args)
+
+        {
+
+            byte[] data = new byte[1024];
+
+ 
+
+            //TCP Client
+
+ 
+
+            Console.WriteLine("This is a Client, host name is {0}", Dns.GetHostName());
+
+ 
+
+            //Set the IP address of the server, and its port.
+
+            IPEndPoint ipep1 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8080);
+
+            IPEndPoint ipep2 = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 8081);
+
+            string welcome = "Hello! ";
+
+ 
+
+            try
+
+            {
+
+                Socket server1 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            
+
+               data = Encoding.ASCII.GetBytes(welcome);
+
+               server1.Connect(ipep1);
+
+               server1.Send(Encoding.ASCII.GetBytes(welcome));
+
+               server1.Close();
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                Console.WriteLine(ex.Message);
+
+            }
+
+ 
+
+            Socket server2 = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+ 
+
+            data = Encoding.ASCII.GetBytes(welcome);
+
+            server2.Connect(ipep2);
+
+            server2.Send(Encoding.ASCII.GetBytes(welcome));
+
+            server2.Close();
+
+ 
+
+        }
+
+}
+
+This communication code is very simple, but illustrates on how to listen to many ports at the same time.

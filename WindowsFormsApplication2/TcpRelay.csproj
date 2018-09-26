@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TcpRelay</RootNamespace>
     <AssemblyName>TcpRelay</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <TargetFrameworkProfile>
@@ -26,7 +26,7 @@
     <MapFileExtensions>false</MapFileExtensions>
     <PublisherName>Andrey Kalugin</PublisherName>
     <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
-    <ApplicationRevision>3</ApplicationRevision>
+    <ApplicationRevision>4</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -42,6 +42,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <RunCodeAnalysis>true</RunCodeAnalysis>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -54,6 +55,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestCertificateThumbprint>AD1337A6AC3BBBF03C4D36E0D4F5A9DD33F25690</ManifestCertificateThumbprint>
@@ -87,6 +89,7 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>bin\x86\Release\</OutputPath>
@@ -98,6 +101,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -112,6 +116,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AccessoryFunctions.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

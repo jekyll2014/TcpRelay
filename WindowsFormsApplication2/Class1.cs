@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Net.Security;
 using System.Net.Sockets;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -212,12 +212,10 @@ namespace AsyncHelper
             if (this.tcpClient != null)
             {
                 this.tcpClient.Close();
-                //this.tcpClient.Dispose();
                 this.tcpClient = null;
             }
             if (this.stream != null)
             {
-                this.stream.Close();
                 this.stream.Dispose();
                 this.stream = null;
             }

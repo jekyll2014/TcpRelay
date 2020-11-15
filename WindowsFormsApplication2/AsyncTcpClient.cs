@@ -5,7 +5,7 @@ using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AsyncHelper
+namespace AsyncTcpClient
 {
     public class AsyncTcpClient : IDisposable
     {
@@ -88,12 +88,12 @@ namespace AsyncHelper
 
         }
 
-        public async Task SendAsync(byte[] data, CancellationToken token = default(CancellationToken))
+        public async Task SendAsync(byte[] data, CancellationToken token = default)
         {
             try
             {
-                await this.stream.WriteAsync(data, 0, data.Length, token);
-                await this.stream.FlushAsync(token);
+                await this.stream.WriteAsync(data, 0, data.Length, token).ConfigureAwait(true);
+                await this.stream.FlushAsync(token).ConfigureAwait(true);
             }
             catch (IOException ex)
             {
@@ -103,33 +103,33 @@ namespace AsyncHelper
                     Console.WriteLine("innocuous ssl stream error");
                     // for SSL streams
                 }
-                else if (onDisconnected != null)
+                else
                 {
-                    onDisconnected(this, EventArgs.Empty);
+                    onDisconnected?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
-        public async Task ConnectAsync(string host, int port, bool ssl = false, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task ConnectAsync(string host, int port, bool ssl = false, CancellationToken cancellationToken = default)
         {
             try
             {
                 //Connect async method
-                await this.CloseAsync();
+                await this.CloseAsync().ConfigureAwait(true);
                 cancellationToken.ThrowIfCancellationRequested();
                 this.tcpClient = new TcpClient();
                 cancellationToken.ThrowIfCancellationRequested();
-                await this.tcpClient.ConnectAsync(host, port);
-                await this.CloseIfCanceled(cancellationToken);
+                await this.tcpClient.ConnectAsync(host, port).ConfigureAwait(true);
+                await this.CloseIfCanceled(cancellationToken).ConfigureAwait(true);
                 // get stream and do SSL handshake if applicable
 
                 this.stream = this.tcpClient.GetStream();
-                await this.CloseIfCanceled(cancellationToken);
+                await this.CloseIfCanceled(cancellationToken).ConfigureAwait(true);
                 if (ssl)
                 {
                     var sslStream = new SslStream(this.stream);
-                    await sslStream.AuthenticateAsClientAsync(host);
+                    await sslStream.AuthenticateAsClientAsync(host).ConfigureAwait(false);
                     this.stream = sslStream;
-                    await this.CloseIfCanceled(cancellationToken);
+                    await this.CloseIfCanceled(cancellationToken).ConfigureAwait(true);
                 }
             }
             catch (Exception)
@@ -139,7 +139,7 @@ namespace AsyncHelper
             }
         }
 
-        public async Task Receive(CancellationToken token = default(CancellationToken))
+        public async Task Receive(CancellationToken token = default)
         {
             try
             {
@@ -150,7 +150,7 @@ namespace AsyncHelper
                 while (this.IsConnected)
                 {
                     token.ThrowIfCancellationRequested();
-                    int bytesRead = await this.stream.ReadAsync(buffer, 0, buffer.Length, token);
+                    int bytesRead = await this.stream.ReadAsync(buffer, 0, buffer.Length, token).ConfigureAwait(true);
                     if (bytesRead > 0)
                     {
                         if (bytesRead == buffer.Length)
@@ -189,10 +189,7 @@ namespace AsyncHelper
                     Console.WriteLine("innocuous ssl stream error");
                     // for SSL streams
                 }
-                if (evt != null)
-                {
-                    evt(this, EventArgs.Empty);
-                }
+                evt?.Invoke(this, EventArgs.Empty);
             }
             finally
             {
@@ -225,9 +222,8 @@ namespace AsyncHelper
         {
             if (token.IsCancellationRequested)
             {
-                await this.CloseAsync();
-                if (onClosed != null)
-                    onClosed();
+                await this.CloseAsync().ConfigureAwait(true);
+                onClosed?.Invoke();
                 token.ThrowIfCancellationRequested();
             }
         }

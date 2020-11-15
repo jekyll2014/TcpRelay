@@ -10,6 +10,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Windows.Forms;
 
+using TcpRelay.Properties;
+
 namespace TcpRelay
 {
     public partial class FormMain : Form
@@ -18,31 +20,30 @@ namespace TcpRelay
         Codepages list https://msdn.microsoft.com/en-us/library/system.text.encoding(v=vs.110).aspx
         const int inputCodePage = TcpRelay.Properties.Settings.Default.CodePage;
         */
-        IPAddress localAddr = IPAddress.Any;
+        private static TcpClient ServerSocket = new TcpClient();
+        private static NetworkStream ServerNetworkStream;
+        private static int ServerPort;
 
-        public static TcpClient ServerSocket = new TcpClient();
-        public static NetworkStream ServerNetworkStream;
-        public static TcpListener serverSocketListener;
-        public static int serverPort = 0;
+        private static TcpClient ClientSocket = new TcpClient();
+        private static TcpListener ClientSocketListener;
+        private static NetworkStream ClientNetworkStream;
+        private static int ClientPort;
 
-        public static TcpClient ClientSocket = new TcpClient();
-        public static TcpListener clientSocketListener;
-        public static NetworkStream ClientNetworkStream;
-        public static int clientPort = 0;
+        private readonly DataTable CSVdataTable = new DataTable("Logs");
+        private string _serverName, _clientName;
 
-        public DataTable CSVdataTable = new DataTable("Logs");
-        string serverName, clientName;
+        private const byte ServerDataIn = 11;
+        private const byte ServerDataOut = 12;
+        private const byte ServerStatus = 13;
+        private const byte ServerError = 15;
 
-        public const byte ServerDataIn = 11;
-        public const byte ServerDataOut = 12;
-        public const byte ServerSignal = 13;
-        public const byte ServerError = 15;
-        public const byte ClientDataIn = 21;
-        public const byte ClientDataOut = 22;
-        public const byte ClientSignal = 23;
-        public const byte ClientError = 25;
+        private const byte ClientDataIn = 21;
+        private const byte ClientDataOut = 22;
+        private const byte ClientStatus = 23;
+        private const byte ClientError = 25;
 
-        delegate void SetTextCallback1(string text);
+        private delegate void SetTextCallback1(string text);
+
         private void SetText(string text)
         {
             text = Accessory.FilterZeroChar(text);
@@ -50,19 +51,19 @@ namespace TcpRelay
             // calling thread to the thread ID of the creating thread.
             // If these threads are different, it returns true.
             //if (this.textBox_terminal1.InvokeRequired)
-            if (this.textBox_terminal1.InvokeRequired)
+            if (textBox_terminal1.InvokeRequired)
             {
-                SetTextCallback1 d = new SetTextCallback1(SetText);
-                this.BeginInvoke(d, new object[] { text });
+                var d = new SetTextCallback1(SetText);
+                BeginInvoke(d, text);
             }
             else
             {
-                this.textBox_terminal1.SelectionStart = this.textBox_terminal1.TextLength;
-                this.textBox_terminal1.SelectedText = text;
+                textBox_terminal1.SelectionStart = textBox_terminal1.TextLength;
+                textBox_terminal1.SelectedText = text;
             }
         }
 
-        public class gridColumns
+        private class GridColumns
         {
             public static string Date { get; } = "Date";
             public static string Time { get; } = "Time";
@@ -74,84 +75,87 @@ namespace TcpRelay
             public static string Mark { get; } = "Mark";
         }
 
-        private object threadLock = new object();
-        public void collectBuffer(string tmpBuffer, int state, string time)
+        private readonly object threadLock = new object();
+
+        private void CollectBuffer(string tmpBuffer, int state, string time)
         {
             if (tmpBuffer != "")
-            {
                 lock (threadLock)
                 {
                     //if (!(txtOutState == state && state != ServerDataOut && state != ClientDataOut))
                     //{
                     if (state == ServerDataIn)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "<< " + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _serverName + "<< " + tmpBuffer;
                     }
                     else if (state == ServerDataOut)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + ">> " + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _serverName + ">> " + tmpBuffer;
                     }
-                    else if (state == ServerSignal)
+                    else if (state == ServerStatus)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "==" + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _serverName + "==" + tmpBuffer;
                     }
                     else if (state == ServerError)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = serverName + "!!" + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _serverName + "!!" + tmpBuffer;
                     }
                     else if (state == ClientDataIn)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "<< " + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _clientName + "<< " + tmpBuffer;
                     }
                     else if (state == ClientDataOut)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + ">> " + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _clientName + ">> " + tmpBuffer;
                     }
-                    else if (state == ClientSignal)
+                    else if (state == ClientStatus)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "==" + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _clientName + "==" + tmpBuffer;
                     }
                     else if (state == ClientError)
                     {
-                        if (checkBox_insDir.Checked == true) tmpBuffer = clientName + "!!" + tmpBuffer;
+                        if (checkBox_insDir.Checked) tmpBuffer = _clientName + "!!" + tmpBuffer;
                     }
-                    if (checkBox_insTime.Checked == true) tmpBuffer = time + " " + tmpBuffer;
+
+                    if (checkBox_insTime.Checked) tmpBuffer = time + " " + tmpBuffer;
                     tmpBuffer = "\r\n" + tmpBuffer;
                     //txtOutState = state;
                     //}
-                    if (autosaveTXTToolStripMenuItem1.Checked == true)
-                    {
+                    if (autosaveTXTToolStripMenuItem1.Checked)
                         try
                         {
-                            File.AppendAllText(terminaltxtToolStripMenuItem1.Text, tmpBuffer, Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage));
+                            File.AppendAllText(terminaltxtToolStripMenuItem1.Text, tmpBuffer,
+                                Encoding.GetEncoding(Settings.Default.CodePage));
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("\r\nError opening file " + terminaltxtToolStripMenuItem1.Text + ": " + ex.Message);
+                            MessageBox.Show("\r\nError opening file " + terminaltxtToolStripMenuItem1.Text + ": " +
+                                            ex.Message);
                         }
-                    }
-                    if (logToTextToolStripMenuItem.Checked == true) SetText(tmpBuffer);
+
+                    if (logToTextToolStripMenuItem.Checked) SetText(tmpBuffer);
                 }
-            }
         }
-        public void CSVcollectBuffer(string tmpBuffer)
+
+        private void CSVcollectBuffer(string tmpBuffer)
         {
             lock (threadLock)
             {
                 if (tmpBuffer != "")
-                {
                     try
                     {
-                        File.AppendAllText(terminalcsvToolStripMenuItem1.Text, tmpBuffer, Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage));
+                        File.AppendAllText(terminalcsvToolStripMenuItem1.Text, tmpBuffer,
+                            Encoding.GetEncoding(Settings.Default.CodePage));
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("\r\nError opening file " + terminalcsvToolStripMenuItem1.Text + ": " + ex.Message);
+                        MessageBox.Show("\r\nError opening file " + terminalcsvToolStripMenuItem1.Text + ": " +
+                                        ex.Message);
                     }
-                }
             }
         }
-        public void CSVcollectGrid(DataRow tmpDataRow)
+
+        private void CSVcollectGrid(DataRow tmpDataRow)
         {
             lock (threadLock)
             {
@@ -163,141 +167,149 @@ namespace TcpRelay
         {
             InitializeComponent();
         }
+
         private void Form1_Load(object sender, EventArgs e)
         {
             dataGridView.DataSource = CSVdataTable;
             //create columns
             DataColumn colDate;
-            colDate = new DataColumn(gridColumns.Date, typeof(string));
+            colDate = new DataColumn(GridColumns.Date, typeof(string));
             DataColumn colTime;
-            colTime = new DataColumn(gridColumns.Time, typeof(string));
+            colTime = new DataColumn(GridColumns.Time, typeof(string));
             DataColumn colMilis;
-            colMilis = new DataColumn(gridColumns.Milis, typeof(string));
+            colMilis = new DataColumn(GridColumns.Milis, typeof(string));
             DataColumn colPort;
-            colPort = new DataColumn(gridColumns.Port, typeof(string));
+            colPort = new DataColumn(GridColumns.Port, typeof(string));
             DataColumn colDir;
-            colDir = new DataColumn(gridColumns.Dir, typeof(string));
+            colDir = new DataColumn(GridColumns.Dir, typeof(string));
             DataColumn colData;
-            colData = new DataColumn(gridColumns.Data, typeof(string));
+            colData = new DataColumn(GridColumns.Data, typeof(string));
             DataColumn colSig;
-            colSig = new DataColumn(gridColumns.Signal, typeof(string));
+            colSig = new DataColumn(GridColumns.Signal, typeof(string));
             DataColumn colMark;
-            colMark = new DataColumn(gridColumns.Mark, typeof(bool));
+            colMark = new DataColumn(GridColumns.Mark, typeof(bool));
             //add columns to the table
-            CSVdataTable.Columns.AddRange(new DataColumn[] { colDate, colTime, colMilis, colPort, colDir, colData, colSig, colMark });
+            CSVdataTable.Columns.AddRange(new[]
+                {colDate, colTime, colMilis, colPort, colDir, colData, colSig, colMark});
 
-            DataGridViewColumn column = dataGridView.Columns[gridColumns.Date];
+            var column = dataGridView.Columns[GridColumns.Date];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 70;
             column.Width = 70;
 
-            column = dataGridView.Columns[gridColumns.Time];
+            column = dataGridView.Columns[GridColumns.Time];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 55;
             column.Width = 55;
 
-            column = dataGridView.Columns[gridColumns.Milis];
+            column = dataGridView.Columns[GridColumns.Milis];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 30;
 
-            column = dataGridView.Columns[gridColumns.Port];
+            column = dataGridView.Columns[GridColumns.Port];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 40;
 
-            column = dataGridView.Columns[gridColumns.Dir];
+            column = dataGridView.Columns[GridColumns.Dir];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 30;
 
-            column = dataGridView.Columns[gridColumns.Data];
+            column = dataGridView.Columns[GridColumns.Data];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 200;
             column.Width = 250;
 
-            column = dataGridView.Columns[gridColumns.Signal];
+            column = dataGridView.Columns[GridColumns.Signal];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 60;
             column.Width = 60;
 
-            column = dataGridView.Columns[gridColumns.Mark];
+            column = dataGridView.Columns[GridColumns.Mark];
             column.AutoSizeMode = DataGridViewAutoSizeColumnMode.ColumnHeader;
             column.Resizable = DataGridViewTriState.True;
             column.MinimumWidth = 30;
             column.Width = 30;
 
             //load settings
-            checkBox_insTime.Checked = TcpRelay.Properties.Settings.Default.LogTime;
-            checkBox_insDir.Checked = TcpRelay.Properties.Settings.Default.LogDir;
-            checkBox_ServerHex.Checked = TcpRelay.Properties.Settings.Default.HexPort1;
-            checkBox_ClientHex.Checked = TcpRelay.Properties.Settings.Default.HexPort2;
-            textBox_clientName.Text = TcpRelay.Properties.Settings.Default.ClientName;
-            textBox_serverName.Text = TcpRelay.Properties.Settings.Default.ServerName;
-            logToGridToolStripMenuItem.Checked = TcpRelay.Properties.Settings.Default.LogGrid;
-            autoscrollToolStripMenuItem.Checked = TcpRelay.Properties.Settings.Default.AutoScroll;
-            lineWrapToolStripMenuItem.Checked = TcpRelay.Properties.Settings.Default.LineWrap;
-            autosaveTXTToolStripMenuItem1.Checked = TcpRelay.Properties.Settings.Default.AutoLogTXT;
-            terminaltxtToolStripMenuItem1.Text = TcpRelay.Properties.Settings.Default.TXTlogFile;
-            autosaveCSVToolStripMenuItem1.Checked = TcpRelay.Properties.Settings.Default.AutoLogCSV;
-            terminalcsvToolStripMenuItem1.Text = TcpRelay.Properties.Settings.Default.CSVlogFile;
-            textBox_serverIP.Text = TcpRelay.Properties.Settings.Default.DefaultServerIP;
-            textBox_clientIP.Text = TcpRelay.Properties.Settings.Default.DefaultClientIP;
-            textBox_serverPort.Text = TcpRelay.Properties.Settings.Default.DefaultServerPort;
-            textBox_clientPort.Text = TcpRelay.Properties.Settings.Default.DefaultClientPort;
+            checkBox_insTime.Checked = Settings.Default.LogTime;
+            checkBox_insDir.Checked = Settings.Default.LogDir;
+            checkBox_ServerHex.Checked = Settings.Default.HexPort1;
+            checkBox_ClientHex.Checked = Settings.Default.HexPort2;
+            textBox_clientName.Text = Settings.Default.ClientName;
+            textBox_serverName.Text = Settings.Default.ServerName;
+            logToGridToolStripMenuItem.Checked = Settings.Default.LogGrid;
+            autoscrollToolStripMenuItem.Checked = Settings.Default.AutoScroll;
+            lineWrapToolStripMenuItem.Checked = Settings.Default.LineWrap;
+            autosaveTXTToolStripMenuItem1.Checked = Settings.Default.AutoLogTXT;
+            terminaltxtToolStripMenuItem1.Text = Settings.Default.TXTlogFile;
+            autosaveCSVToolStripMenuItem1.Checked = Settings.Default.AutoLogCSV;
+            terminalcsvToolStripMenuItem1.Text = Settings.Default.CSVlogFile;
+            textBox_serverIP.Text = Settings.Default.DefaultServerIP;
+            textBox_clientIP.Text = Settings.Default.DefaultClientIP;
+            textBox_serverPort.Text = Settings.Default.DefaultServerPort;
+            textBox_clientPort.Text = Settings.Default.DefaultClientPort;
 
-            serverName = textBox_serverName.Text;
+            _serverName = textBox_serverName.Text;
             checkBox_ServerHex.Text = textBox_serverName.Text;
 
-            clientName = textBox_clientName.Text;
+            _clientName = textBox_clientName.Text;
             checkBox_ClientHex.Text = textBox_clientName.Text;
 
-            serverPort = int.Parse(textBox_serverPort.Text);
-            clientPort = int.Parse(textBox_clientPort.Text);
+            ServerPort = int.Parse(textBox_serverPort.Text);
+            ClientPort = int.Parse(textBox_clientPort.Text);
 
-            if (autosaveTXTToolStripMenuItem1.Checked == true) terminaltxtToolStripMenuItem1.Enabled = true;
+            if (autosaveTXTToolStripMenuItem1.Checked) terminaltxtToolStripMenuItem1.Enabled = true;
             else terminaltxtToolStripMenuItem1.Enabled = false;
         }
 
-        private void button_start_Click(object sender, EventArgs e)
+        private void Button_start_Click(object sender, EventArgs e)
         {
             if (textBox_serverIP.Text != "" && textBox_serverPort.Text != "" && textBox_clientPort.Text != "")
             {
                 try
                 {
-                    IPAddress localAddr = IPAddress.Any;
-                    clientSocketListener = new TcpListener(localAddr, clientPort);
+                    var localAddr = IPAddress.Any;
+                    ClientSocketListener = new TcpListener(localAddr, ClientPort);
                     ClientSocket = new TcpClient();
-                    clientSocketListener.Start();
+                    ClientSocketListener.Start();
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Open client port: " + ex.Message);
+                    ClientErrorReceived("Error opening client port: " + ex.Message);
                     return;
                 }
+
                 //check if server available
                 try
                 {
                     ServerSocket = new TcpClient();
-                    ServerSocket.Connect(textBox_serverIP.Text, serverPort);
-                    ServerSocket.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
-                    ServerSocket.Client.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.Client.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
+                    ServerSocket.Connect(textBox_serverIP.Text, ServerPort);
+                    ServerSocket.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.SendTimeout = Settings.Default.SendTimeOut;
+                    ServerSocket.Client.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.Client.SendTimeout = Settings.Default.SendTimeOut;
                     ServerNetworkStream = ServerSocket.GetStream();
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Connect to server: " + ex.ToString());
+                    ServerErrorReceived("Error connecting to server: " + ex);
+                    ServerNetworkStream?.Close();
+                    ServerSocket?.Close();
+                    ServerSocket = new TcpClient();
+                    ClientSocketListener.Stop();
                     return;
                 }
+
                 try
                 {
                     if (ServerSocket.Connected)
@@ -306,12 +318,26 @@ namespace TcpRelay
                         ServerSocket.Close();
                         ServerSocket = new TcpClient();
                     }
+                    else
+                    {
+                        ServerErrorReceived("Error connecting to server");
+                        ServerNetworkStream?.Close();
+                        ServerSocket?.Close();
+                        ServerSocket = new TcpClient();
+                        ClientSocketListener.Stop();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Disconnect server: " + ex.ToString());
+                    ServerErrorReceived("Disconnect server: " + ex);
+                    ServerErrorReceived("Error connecting to server: " + ex);
+                    ServerNetworkStream?.Close();
+                    ServerSocket?.Close();
+                    ServerSocket = new TcpClient();
+                    ClientSocketListener.Stop();
                     return;
                 }
+
                 textBox_serverIP.Enabled = false;
                 textBox_serverPort.Enabled = false;
                 textBox_clientIP.Enabled = false;
@@ -321,17 +347,15 @@ namespace TcpRelay
                 ClientStatusChanged("Started listening to " + textBox_clientIP.Text + ":" + textBox_clientPort.Text);
                 timer1.Enabled = true;
             }
-            //button_send.Enabled = true;
         }
 
-        private void button_stop_Click(object sender, EventArgs e)
+        private void Button_stop_Click(object sender, EventArgs e)
         {
             timer1.Enabled = false;
             try
             {
-                clientSocketListener.Stop();
+                ClientSocketListener.Stop();
                 if (ClientConnected())
-                {
                     if (ClientSocket.Connected)
                     {
                         ClientNetworkStream.Close();
@@ -339,29 +363,28 @@ namespace TcpRelay
                         ClientSocket.Close();
                         ClientSocket = new TcpClient();
                     }
-                }
             }
             catch (Exception ex)
             {
                 ClientErrorReceived("Close client port: " + ex.Message);
             }
+
             try
             {
                 if (ServerConnected())
-                {
-                    if (ClientSocket.Connected)
+                    if (ServerSocket.Connected)
                     {
                         ServerNetworkStream.Close();
                         ServerSocket.Client.Disconnect(false);
                         ServerSocket.Close();
                         ServerSocket = new TcpClient();
                     }
-                }
             }
             catch (Exception ex)
             {
                 ServerErrorReceived("Close server: " + ex.Message);
             }
+
             textBox_serverIP.Enabled = true;
             textBox_serverPort.Enabled = true;
             textBox_clientIP.Enabled = true;
@@ -371,120 +394,153 @@ namespace TcpRelay
             ClientStatusChanged("Stopped listening to " + textBox_clientIP.Text + ":" + textBox_clientPort.Text);
         }
 
-        private void client_DataReceived(byte[] rx1)
+        private void Client_DataReceived(byte[] rx1)
         {
-            DataRow dataRowRX1 = null;
-            dataRowRX1 = CSVdataTable.NewRow();
-            dataRowRX1[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowRX1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowRX1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowRX1[gridColumns.Port] = serverName;
-            dataRowRX1[gridColumns.Dir] = "RX";
-            dataRowRX1[gridColumns.Mark] = checkBox_Mark.Checked;
-            dataRowRX1[gridColumns.Data] = Accessory.ConvertByteArrayToHex(rx1);
-            if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowRX1);
-            string outStr1 = "";
-            if (checkBox_ServerHex.Checked == true) outStr1 += dataRowRX1[gridColumns.Data];
-            else outStr1 += Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage).GetString(rx1, 0, rx1.Length);
-            collectBuffer(outStr1, ServerDataIn, dataRowRX1[gridColumns.Date] + " " + dataRowRX1[gridColumns.Time] + "." + dataRowRX1[gridColumns.Milis]);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX1[gridColumns.Date] + "," + dataRowRX1[gridColumns.Time] + "," + dataRowRX1[gridColumns.Milis] + "," + dataRowRX1[gridColumns.Port] + "," + dataRowRX1[gridColumns.Dir] + "," + dataRowRX1[gridColumns.Data] + "," + "," + dataRowRX1[gridColumns.Mark] + "\r\n");
+            var dataRowRx1 = CSVdataTable.NewRow();
+            dataRowRx1[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowRx1[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowRx1[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowRx1[GridColumns.Port] = _serverName;
+            dataRowRx1[GridColumns.Dir] = "RX";
+            dataRowRx1[GridColumns.Mark] = checkBox_Mark.Checked;
+            dataRowRx1[GridColumns.Data] = Accessory.ConvertByteArrayToHex(rx1);
+            if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowRx1);
+            var outStr1 = "";
+            if (checkBox_ServerHex.Checked) outStr1 += dataRowRx1[GridColumns.Data];
+            else outStr1 += Encoding.GetEncoding(Settings.Default.CodePage).GetString(rx1, 0, rx1.Length);
+            CollectBuffer(outStr1, ServerDataIn,
+                dataRowRx1[GridColumns.Date] + " " + dataRowRx1[GridColumns.Time] + "." +
+                dataRowRx1[GridColumns.Milis]);
+            if (autosaveCSVToolStripMenuItem1.Checked)
+                CSVcollectBuffer(dataRowRx1[GridColumns.Date] + "," + dataRowRx1[GridColumns.Time] + "," +
+                                 dataRowRx1[GridColumns.Milis] + "," + dataRowRx1[GridColumns.Port] + "," +
+                                 dataRowRx1[GridColumns.Dir] + "," + dataRowRx1[GridColumns.Data] + "," + "," +
+                                 dataRowRx1[GridColumns.Mark] + "\r\n");
         }
 
-        private void server_DataReceived(byte[] rx2)
+        private void Server_DataReceived(byte[] rx2)
         {
-            DataRow dataRowRX2 = null;
-            dataRowRX2 = CSVdataTable.NewRow();
-            dataRowRX2[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowRX2[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowRX2[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowRX2[gridColumns.Port] = clientName;
-            dataRowRX2[gridColumns.Dir] = "RX";
-            dataRowRX2[gridColumns.Data] = Accessory.ConvertByteArrayToHex(rx2);
-            dataRowRX2[gridColumns.Mark] = checkBox_Mark.Checked;
-            if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowRX2);
-            string outStr2 = "";
-            if (checkBox_ClientHex.Checked == true) outStr2 += dataRowRX2[gridColumns.Data];
-            else outStr2 += System.Text.Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage).GetString(rx2, 0, rx2.Length);
-            collectBuffer(outStr2, ClientDataIn, dataRowRX2[gridColumns.Date] + " " + dataRowRX2[gridColumns.Time] + "." + dataRowRX2[gridColumns.Milis]);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowRX2[gridColumns.Date] + "," + dataRowRX2[gridColumns.Time] + "," + dataRowRX2[gridColumns.Milis] + "," + dataRowRX2[gridColumns.Port] + "," + dataRowRX2[gridColumns.Dir] + "," + dataRowRX2[gridColumns.Data] + "," + "," + dataRowRX2[gridColumns.Mark] + "\r\n");
+            var dataRowRx2 = CSVdataTable.NewRow();
+            dataRowRx2[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowRx2[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowRx2[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowRx2[GridColumns.Port] = _clientName;
+            dataRowRx2[GridColumns.Dir] = "RX";
+            dataRowRx2[GridColumns.Data] = Accessory.ConvertByteArrayToHex(rx2);
+            dataRowRx2[GridColumns.Mark] = checkBox_Mark.Checked;
+            if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowRx2);
+            var outStr2 = "";
+            if (checkBox_ClientHex.Checked) outStr2 += dataRowRx2[GridColumns.Data];
+            else outStr2 += Encoding.GetEncoding(Settings.Default.CodePage).GetString(rx2, 0, rx2.Length);
+            CollectBuffer(outStr2, ClientDataIn,
+                dataRowRx2[GridColumns.Date] + " " + dataRowRx2[GridColumns.Time] + "." +
+                dataRowRx2[GridColumns.Milis]);
+            if (autosaveCSVToolStripMenuItem1.Checked)
+                CSVcollectBuffer(dataRowRx2[GridColumns.Date] + "," + dataRowRx2[GridColumns.Time] + "," +
+                                 dataRowRx2[GridColumns.Milis] + "," + dataRowRx2[GridColumns.Port] + "," +
+                                 dataRowRx2[GridColumns.Dir] + "," + dataRowRx2[GridColumns.Data] + "," + "," +
+                                 dataRowRx2[GridColumns.Mark] + "\r\n");
         }
 
         private void ServerStatusChanged(string outStr)
         {
-            DataRow dataRowPIN1 = null;
-            dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1[gridColumns.Port] = serverName;
-            dataRowPIN1[gridColumns.Dir] = "-";
-            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
+            var dataRowPin1 = CSVdataTable.NewRow();
+            dataRowPin1[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPin1[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPin1[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPin1[GridColumns.Port] = _serverName;
+            dataRowPin1[GridColumns.Dir] = "-";
+            dataRowPin1[GridColumns.Mark] = checkBox_Mark.Checked;
             if (outStr != "")
             {
-                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerSignal, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
-                dataRowPIN1["Signal"] = outStr;
-                if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
+                if (checkBox_insPin.Checked)
+                    CollectBuffer(outStr, ServerStatus,
+                        dataRowPin1[GridColumns.Date] + " " + dataRowPin1[GridColumns.Time] + "." +
+                        dataRowPin1[GridColumns.Milis]);
+                dataRowPin1["Signal"] = outStr;
+                if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowPin1);
+                if (autosaveCSVToolStripMenuItem1.Checked)
+                    CSVcollectBuffer(dataRowPin1[GridColumns.Date] + "," + dataRowPin1[GridColumns.Time] + "," +
+                                     dataRowPin1[GridColumns.Milis] + "," + dataRowPin1[GridColumns.Port] + "," +
+                                     dataRowPin1[GridColumns.Dir] + "," + dataRowPin1[GridColumns.Data] + "," +
+                                     dataRowPin1["Signal"] + "," + dataRowPin1[GridColumns.Mark] + "\r\n");
             }
         }
 
         private void ClientStatusChanged(string outStr)
         {
-            DataRow dataRowPIN1 = null;
-            dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1[gridColumns.Port] = clientName;
-            dataRowPIN1[gridColumns.Dir] = "-";
-            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
+            var dataRowPin1 = CSVdataTable.NewRow();
+            dataRowPin1[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPin1[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPin1[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPin1[GridColumns.Port] = _clientName;
+            dataRowPin1[GridColumns.Dir] = "-";
+            dataRowPin1[GridColumns.Mark] = checkBox_Mark.Checked;
             if (outStr != "")
             {
-                if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientSignal, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
-                dataRowPIN1["Signal"] = outStr;
-                if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-                if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
+                if (checkBox_insPin.Checked)
+                    CollectBuffer(outStr, ClientStatus,
+                        dataRowPin1[GridColumns.Date] + " " + dataRowPin1[GridColumns.Time] + "." +
+                        dataRowPin1[GridColumns.Milis]);
+                dataRowPin1["Signal"] = outStr;
+                if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowPin1);
+                if (autosaveCSVToolStripMenuItem1.Checked)
+                    CSVcollectBuffer(dataRowPin1[GridColumns.Date] + "," + dataRowPin1[GridColumns.Time] + "," +
+                                     dataRowPin1[GridColumns.Milis] + "," + dataRowPin1[GridColumns.Port] + "," +
+                                     dataRowPin1[GridColumns.Dir] + "," + dataRowPin1[GridColumns.Data] + "," +
+                                     dataRowPin1["Signal"] + "," + dataRowPin1[GridColumns.Mark] + "\r\n");
             }
         }
 
         private void ServerErrorReceived(string outStr)
         {
-            DataRow dataRowPIN1 = null;
-            dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1[gridColumns.Port] = serverName;
-            dataRowPIN1[gridColumns.Dir] = "-";
-            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
+            var dataRowPin1 = CSVdataTable.NewRow();
+            dataRowPin1[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPin1[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPin1[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPin1[GridColumns.Port] = _serverName;
+            dataRowPin1[GridColumns.Dir] = "-";
+            dataRowPin1[GridColumns.Mark] = checkBox_Mark.Checked;
             outStr = "<! Error: " + outStr + "!>";
-            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ServerError, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
-            dataRowPIN1["Signal"] = outStr;
-            if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
+            if (checkBox_insPin.Checked)
+                CollectBuffer(outStr, ServerError,
+                    dataRowPin1[GridColumns.Date] + " " + dataRowPin1[GridColumns.Time] + "." +
+                    dataRowPin1[GridColumns.Milis]);
+            dataRowPin1["Signal"] = outStr;
+            if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowPin1);
+            if (autosaveCSVToolStripMenuItem1.Checked)
+                CSVcollectBuffer(dataRowPin1[GridColumns.Date] + "," + dataRowPin1[GridColumns.Time] + "," +
+                                 dataRowPin1[GridColumns.Milis] + "," + dataRowPin1[GridColumns.Port] + "," +
+                                 dataRowPin1[GridColumns.Dir] + "," + dataRowPin1[GridColumns.Data] + "," +
+                                 dataRowPin1["Signal"] + "," + dataRowPin1[GridColumns.Mark] + "\r\n");
         }
 
         private void ClientErrorReceived(string outStr)
         {
-            DataRow dataRowPIN1 = null;
-            dataRowPIN1 = CSVdataTable.NewRow();
-            dataRowPIN1[gridColumns.Date] = DateTime.Today.ToShortDateString();
-            dataRowPIN1[gridColumns.Time] = DateTime.Now.ToLongTimeString();
-            dataRowPIN1[gridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
-            dataRowPIN1[gridColumns.Port] = clientName;
-            dataRowPIN1[gridColumns.Dir] = "-";
-            dataRowPIN1[gridColumns.Mark] = checkBox_Mark.Checked;
+            var dataRowPin1 = CSVdataTable.NewRow();
+            dataRowPin1[GridColumns.Date] = DateTime.Today.ToShortDateString();
+            dataRowPin1[GridColumns.Time] = DateTime.Now.ToLongTimeString();
+            dataRowPin1[GridColumns.Milis] = DateTime.Now.Millisecond.ToString("D3");
+            dataRowPin1[GridColumns.Port] = _clientName;
+            dataRowPin1[GridColumns.Dir] = "-";
+            dataRowPin1[GridColumns.Mark] = checkBox_Mark.Checked;
             outStr = "<! Error: " + outStr + "!>";
-            if (checkBox_insPin.Checked == true) collectBuffer(outStr, ClientError, dataRowPIN1[gridColumns.Date] + " " + dataRowPIN1[gridColumns.Time] + "." + dataRowPIN1[gridColumns.Milis]);
-            dataRowPIN1["Signal"] = outStr;
-            if (logToGridToolStripMenuItem.Checked == true) CSVcollectGrid(dataRowPIN1);
-            if (autosaveCSVToolStripMenuItem1.Checked == true) CSVcollectBuffer(dataRowPIN1[gridColumns.Date] + "," + dataRowPIN1[gridColumns.Time] + "," + dataRowPIN1[gridColumns.Milis] + "," + dataRowPIN1[gridColumns.Port] + "," + dataRowPIN1[gridColumns.Dir] + "," + dataRowPIN1[gridColumns.Data] + "," + dataRowPIN1["Signal"] + "," + dataRowPIN1[gridColumns.Mark] + "\r\n");
+            if (checkBox_insPin.Checked)
+                CollectBuffer(outStr, ClientError,
+                    dataRowPin1[GridColumns.Date] + " " + dataRowPin1[GridColumns.Time] + "." +
+                    dataRowPin1[GridColumns.Milis]);
+            dataRowPin1["Signal"] = outStr;
+            if (logToGridToolStripMenuItem.Checked) CSVcollectGrid(dataRowPin1);
+            if (autosaveCSVToolStripMenuItem1.Checked)
+                CSVcollectBuffer(dataRowPin1[GridColumns.Date] + "," + dataRowPin1[GridColumns.Time] + "," +
+                                 dataRowPin1[GridColumns.Milis] + "," + dataRowPin1[GridColumns.Port] + "," +
+                                 dataRowPin1[GridColumns.Dir] + "," + dataRowPin1[GridColumns.Data] + "," +
+                                 dataRowPin1["Signal"] + "," + dataRowPin1[GridColumns.Mark] + "\r\n");
         }
 
-        private void saveFileDialog1_FileOk(object sender, CancelEventArgs e)
+        private void SaveFileDialog1_FileOk(object sender, CancelEventArgs e)
         {
             if (saveFileDialog.Title == "Save .TXT log as...")
-            {
                 try
                 {
                     File.WriteAllText(saveFileDialog.FileName, textBox_terminal1.Text);
@@ -493,27 +549,22 @@ namespace TcpRelay
                 {
                     MessageBox.Show("Error writing to file " + saveFileDialog.FileName + ": " + ex.Message);
                 }
-            }
+
             if (saveFileDialog.Title == "Save .CSV log as...")
             {
-                int columnCount = dataGridView.ColumnCount;
-                string output = "";
-                for (int i = 0; i < columnCount; i++)
-                {
-                    output += dataGridView.Columns[i].Name.ToString() + ",";
-                }
+                var columnCount = dataGridView.ColumnCount;
+                var output = "";
+                for (var i = 0; i < columnCount; i++) output += dataGridView.Columns[i].Name + ",";
                 output += "\r\n";
-                for (int i = 1; (i - 1) < dataGridView.RowCount; i++)
+                for (var i = 1; i - 1 < dataGridView.RowCount; i++)
                 {
-                    for (int j = 0; j < columnCount; j++)
-                    {
-                        output += dataGridView.Rows[i - 1].Cells[j].Value.ToString() + ",";
-                    }
+                    for (var j = 0; j < columnCount; j++) output += dataGridView.Rows[i - 1].Cells[j].Value + ",";
                     output += "\r\n";
                 }
+
                 try
                 {
-                    File.WriteAllText(saveFileDialog.FileName, output, Encoding.GetEncoding(TcpRelay.Properties.Settings.Default.CodePage));
+                    File.WriteAllText(saveFileDialog.FileName, output, Encoding.GetEncoding(Settings.Default.CodePage));
                 }
                 catch (Exception ex)
                 {
@@ -522,7 +573,7 @@ namespace TcpRelay
             }
         }
 
-        private void saveTXTToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveTXTToolStripMenuItem_Click(object sender, EventArgs e)
         {
             saveFileDialog.Title = "Save .TXT log as...";
             saveFileDialog.DefaultExt = "txt";
@@ -531,7 +582,7 @@ namespace TcpRelay
             saveFileDialog.ShowDialog();
         }
 
-        private void saveCSVToolStripMenuItem_Click(object sender, EventArgs e)
+        private void SaveCSVToolStripMenuItem_Click(object sender, EventArgs e)
         {
             saveFileDialog.Title = "Save .CSV log as...";
             saveFileDialog.DefaultExt = "csv";
@@ -540,44 +591,44 @@ namespace TcpRelay
             saveFileDialog.ShowDialog();
         }
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show("TcpRelay\r\n(c) Kalugin Andrey\r\nContact: jekyll@mail.ru");
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Application.Exit();
         }
 
-        private void saveParametersToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void SaveParametersToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            TcpRelay.Properties.Settings.Default.LogTime = checkBox_insTime.Checked;
-            TcpRelay.Properties.Settings.Default.LogDir = checkBox_insDir.Checked;
-            TcpRelay.Properties.Settings.Default.HexPort1 = checkBox_ServerHex.Checked;
-            TcpRelay.Properties.Settings.Default.HexPort2 = checkBox_ClientHex.Checked;
-            TcpRelay.Properties.Settings.Default.ServerName = textBox_clientName.Text;
-            TcpRelay.Properties.Settings.Default.ClientName = textBox_serverName.Text;
-            TcpRelay.Properties.Settings.Default.LogText = logToTextToolStripMenuItem.Checked;
+            Settings.Default.LogTime = checkBox_insTime.Checked;
+            Settings.Default.LogDir = checkBox_insDir.Checked;
+            Settings.Default.HexPort1 = checkBox_ServerHex.Checked;
+            Settings.Default.HexPort2 = checkBox_ClientHex.Checked;
+            Settings.Default.ServerName = textBox_clientName.Text;
+            Settings.Default.ClientName = textBox_serverName.Text;
+            Settings.Default.LogText = logToTextToolStripMenuItem.Checked;
 
-            TcpRelay.Properties.Settings.Default.AutoScroll = autoscrollToolStripMenuItem.Checked;
-            TcpRelay.Properties.Settings.Default.LineWrap = lineWrapToolStripMenuItem.Checked;
-            TcpRelay.Properties.Settings.Default.AutoLogTXT = autosaveTXTToolStripMenuItem1.Checked;
-            TcpRelay.Properties.Settings.Default.TXTlogFile = terminaltxtToolStripMenuItem1.Text;
-            TcpRelay.Properties.Settings.Default.AutoLogCSV = autosaveCSVToolStripMenuItem1.Checked;
-            TcpRelay.Properties.Settings.Default.CSVlogFile = terminalcsvToolStripMenuItem1.Text;
-            TcpRelay.Properties.Settings.Default.DefaultServerIP = textBox_serverIP.Text;
-            TcpRelay.Properties.Settings.Default.DefaultClientIP = textBox_clientIP.Text;
-            TcpRelay.Properties.Settings.Default.DefaultServerPort = textBox_serverPort.Text;
-            TcpRelay.Properties.Settings.Default.DefaultClientPort = textBox_clientPort.Text;
+            Settings.Default.AutoScroll = autoscrollToolStripMenuItem.Checked;
+            Settings.Default.LineWrap = lineWrapToolStripMenuItem.Checked;
+            Settings.Default.AutoLogTXT = autosaveTXTToolStripMenuItem1.Checked;
+            Settings.Default.TXTlogFile = terminaltxtToolStripMenuItem1.Text;
+            Settings.Default.AutoLogCSV = autosaveCSVToolStripMenuItem1.Checked;
+            Settings.Default.CSVlogFile = terminalcsvToolStripMenuItem1.Text;
+            Settings.Default.DefaultServerIP = textBox_serverIP.Text;
+            Settings.Default.DefaultClientIP = textBox_clientIP.Text;
+            Settings.Default.DefaultServerPort = textBox_serverPort.Text;
+            Settings.Default.DefaultClientPort = textBox_clientPort.Text;
 
 
-            TcpRelay.Properties.Settings.Default.Save();
+            Settings.Default.Save();
         }
 
-        private void autosaveTXTToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void AutosaveTXTToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            if (autosaveTXTToolStripMenuItem1.Checked == true)
+            if (autosaveTXTToolStripMenuItem1.Checked)
             {
                 autosaveTXTToolStripMenuItem1.Checked = false;
                 terminaltxtToolStripMenuItem1.Enabled = true;
@@ -589,9 +640,9 @@ namespace TcpRelay
             }
         }
 
-        private void autosaveCSVToolStripMenuItem1_Click(object sender, EventArgs e)
+        private void AutosaveCSVToolStripMenuItem1_Click(object sender, EventArgs e)
         {
-            if (autosaveCSVToolStripMenuItem1.Checked == true)
+            if (autosaveCSVToolStripMenuItem1.Checked)
             {
                 autosaveCSVToolStripMenuItem1.Checked = false;
                 terminalcsvToolStripMenuItem1.Enabled = true;
@@ -603,25 +654,25 @@ namespace TcpRelay
             }
         }
 
-        private void lineWrapToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LineWrapToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (lineWrapToolStripMenuItem.Checked == true) lineWrapToolStripMenuItem.Checked = false;
+            if (lineWrapToolStripMenuItem.Checked) lineWrapToolStripMenuItem.Checked = false;
             else lineWrapToolStripMenuItem.Checked = true;
             textBox_terminal1.WordWrap = lineWrapToolStripMenuItem.Checked;
         }
 
-        private void autoscrollToolStripMenuItem_Click(object sender, EventArgs e)
+        private void AutoscrollToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (autoscrollToolStripMenuItem.Checked == true) autoscrollToolStripMenuItem.Checked = false;
+            if (autoscrollToolStripMenuItem.Checked) autoscrollToolStripMenuItem.Checked = false;
             else autoscrollToolStripMenuItem.Checked = true;
         }
 
-        private void logToGridToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LogToGridToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (logToGridToolStripMenuItem.Checked == true)
+            if (logToGridToolStripMenuItem.Checked)
             {
                 logToGridToolStripMenuItem.Checked = false;
-                ((Control)this.tabPage1).Enabled = false;
+                ((Control) tabPage1).Enabled = false;
                 if (logToTextToolStripMenuItem.Checked == false)
                 {
                     tabControl1.Enabled = false;
@@ -631,36 +682,36 @@ namespace TcpRelay
             else
             {
                 logToGridToolStripMenuItem.Checked = true;
-                ((Control)this.tabPage1).Enabled = true;
+                ((Control) tabPage1).Enabled = true;
                 tabControl1.Enabled = true;
                 tabControl1.Visible = true;
             }
         }
 
-        private void checkBox_Mark_CheckedChanged(object sender, EventArgs e)
+        private void CheckBox_Mark_CheckedChanged(object sender, EventArgs e)
         {
-            if (checkBox_Mark.Checked == true) checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Bold);
+            if (checkBox_Mark.Checked) checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Bold);
             else checkBox_Mark.Font = new Font(checkBox_Mark.Font, FontStyle.Regular);
         }
 
-        private void textBox_serverPort_Leave(object sender, EventArgs e)
+        private void TextBox_serverPort_Leave(object sender, EventArgs e)
         {
-            int.TryParse(textBox_serverPort.Text, out serverPort);
-            textBox_serverPort.Text = serverPort.ToString();
+            int.TryParse(textBox_serverPort.Text, out ServerPort);
+            textBox_serverPort.Text = ServerPort.ToString();
         }
 
-        private void textBox_clientPort_Leave(object sender, EventArgs e)
+        private void TextBox_clientPort_Leave(object sender, EventArgs e)
         {
-            int.TryParse(textBox_clientPort.Text, out clientPort);
-            textBox_clientPort.Text = clientPort.ToString();
+            int.TryParse(textBox_clientPort.Text, out ClientPort);
+            textBox_clientPort.Text = ClientPort.ToString();
         }
 
-        private void logToTextToolStripMenuItem_Click(object sender, EventArgs e)
+        private void LogToTextToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (logToTextToolStripMenuItem.Checked == true)
+            if (logToTextToolStripMenuItem.Checked)
             {
                 logToTextToolStripMenuItem.Checked = false;
-                ((Control)this.tabPage2).Enabled = false;
+                ((Control) tabPage2).Enabled = false;
                 if (logToGridToolStripMenuItem.Checked == false)
                 {
                     tabControl1.Enabled = false;
@@ -670,19 +721,19 @@ namespace TcpRelay
             else
             {
                 logToTextToolStripMenuItem.Checked = true;
-                ((Control)this.tabPage2).Enabled = true;
+                ((Control) tabPage2).Enabled = true;
                 tabControl1.Enabled = true;
                 tabControl1.Visible = true;
             }
         }
 
-        private void button_clear_Click(object sender, EventArgs e)
+        private void Button_clear_Click(object sender, EventArgs e)
         {
             textBox_terminal1.Clear();
             CSVdataTable.Rows.Clear();
         }
 
-        private void tabControl1_Selecting(object sender, TabControlCancelEventArgs e)
+        private void TabControl1_Selecting(object sender, TabControlCancelEventArgs e)
         {
             if (e.TabPage == tabPage1 && logToTextToolStripMenuItem.Checked == false)
                 e.Cancel = true;
@@ -690,35 +741,22 @@ namespace TcpRelay
                 e.Cancel = true;
         }
 
-        public static string ConvertByteArrayToHex(byte[] byteArr, int Length)
+        private void Timer1_Tick(object sender, EventArgs e)
         {
-            if (Length > byteArr.Length) Length = byteArr.Length;
-            string hexStr = "";
-            int i = 0;
-            for (i = 0; i < Length; i++)
-            {
-                hexStr += byteArr[i].ToString("X2") + " ";
-            }
-            return hexStr;
-        }
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            List<byte> bytesFromClient = new List<byte>();
-            List<byte> bytesFromServer = new List<byte>();
+            var bytesFromClient = new List<byte>();
+            var bytesFromServer = new List<byte>();
 
             //accept client if any pending
-            if (clientSocketListener.Pending())
+            if (ClientSocketListener.Pending())
             {
                 try
                 {
-                    ClientSocket = clientSocketListener.AcceptTcpClient();
-                    IPAddress clientAddr = ((IPEndPoint)ClientSocket.Client.RemoteEndPoint).Address;
+                    ClientSocket = ClientSocketListener.AcceptTcpClient();
+                    var clientAddr = ((IPEndPoint) ClientSocket.Client.RemoteEndPoint).Address;
                     if (textBox_clientIP.Text != "")
                     {
-                        IPAddress setClientAddr;
-                        IPAddress.TryParse(textBox_clientIP.Text, out setClientAddr);
-                        if (clientAddr != setClientAddr)
+                        IPAddress.TryParse(textBox_clientIP.Text, out var setClientAddr);
+                        if (!clientAddr.Equals(setClientAddr))
                         {
                             ClientSocket.Client.Disconnect(false);
                             ClientSocket.Close();
@@ -726,48 +764,45 @@ namespace TcpRelay
                             return;
                         }
                     }
+
                     ClientNetworkStream = ClientSocket.GetStream();
-                    ClientStatusChanged("Client connected " + clientAddr.ToString() + ":" + textBox_clientPort.Text);
+                    ClientStatusChanged("Client connected " + clientAddr + ":" + textBox_clientPort.Text);
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Accept client: " + ex.ToString());
+                    ClientErrorReceived("Accept client: " + ex);
                 }
+
                 //connect to server
                 try
                 {
                     ServerSocket = new TcpClient();
-                    ServerSocket.Connect(textBox_serverIP.Text, serverPort);
-                    ServerSocket.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
-                    ServerSocket.Client.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.Client.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
+                    ServerSocket.Connect(textBox_serverIP.Text, ServerPort);
+                    ServerSocket.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.SendTimeout = Settings.Default.SendTimeOut;
+                    ServerSocket.Client.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.Client.SendTimeout = Settings.Default.SendTimeOut;
                     ServerNetworkStream = ServerSocket.GetStream();
                     timer1.Enabled = true;
                     ServerStatusChanged("Connected to server " + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Connect to server: " + ex.ToString());
+                    ServerErrorReceived("Connect to server: " + ex);
                 }
             }
 
             //read data from client if any
             if (ClientConnected() && ClientSocket.Connected)
-            {
                 try
                 {
-                    while (ClientSocket.Available > 0)
-                    {
-                        bytesFromClient.Add((byte)ClientNetworkStream.ReadByte());
-                    }
-                    client_DataReceived(bytesFromClient.ToArray());
+                    while (ClientSocket.Available > 0) bytesFromClient.Add((byte) ClientNetworkStream.ReadByte());
+                    Client_DataReceived(bytesFromClient.ToArray());
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Read client: " + ex.ToString());
+                    ClientErrorReceived("Read client: " + ex);
                 }
-            }
 
             //disconnect from server if client disconnected
             if (!ClientConnected() && ServerConnected())
@@ -784,8 +819,9 @@ namespace TcpRelay
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Disconnect client: " + ex.ToString());
+                    ClientErrorReceived("Disconnect client: " + ex);
                 }
+
                 try
                 {
                     if (ServerSocket.Connected)
@@ -798,146 +834,129 @@ namespace TcpRelay
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Disconnect server: " + ex.ToString());
+                    ServerErrorReceived("Disconnect server: " + ex);
                 }
             }
 
             //reconnect to server if disconnected
             if (ClientConnected() && !ServerConnected())
-            {
                 try
                 {
                     ServerSocket = new TcpClient();
-                    ServerSocket.Connect(textBox_serverIP.Text, serverPort);
-                    ServerSocket.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
-                    ServerSocket.Client.ReceiveTimeout = TcpRelay.Properties.Settings.Default.ReceiveTimeOut;
-                    ServerSocket.Client.SendTimeout = TcpRelay.Properties.Settings.Default.SendTimeOut;
+                    ServerSocket.Connect(textBox_serverIP.Text, ServerPort);
+                    ServerSocket.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.SendTimeout = Settings.Default.SendTimeOut;
+                    ServerSocket.Client.ReceiveTimeout = Settings.Default.ReceiveTimeOut;
+                    ServerSocket.Client.SendTimeout = Settings.Default.SendTimeOut;
                     ServerNetworkStream = ServerSocket.GetStream();
                     timer1.Enabled = true;
-                    ServerStatusChanged("Reconnected to server " + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
+                    ServerStatusChanged(
+                        "Reconnected to server " + textBox_serverIP.Text + ":" + textBox_serverPort.Text);
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Reconnect server: " + ex.ToString());
+                    ServerErrorReceived("Reconnect server: " + ex);
                 }
-            }
 
             //send from client to server
             if (bytesFromClient.Count > 0)
-            {
                 try
                 {
                     ServerNetworkStream.Write(bytesFromClient.ToArray(), 0, bytesFromClient.Count);
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Send to server: " + ex.ToString());
+                    ServerErrorReceived("Send to server: " + ex);
                 }
-            }
 
             //read data from server if any
             if (ServerConnected() && ServerSocket.Connected)
-            {
                 try
                 {
-                    while (ServerSocket.Available > 0)
-                    {
-                        bytesFromServer.Add((byte)ServerNetworkStream.ReadByte());
-                    }
-                    server_DataReceived(bytesFromServer.ToArray());
+                    while (ServerSocket.Available > 0) bytesFromServer.Add((byte) ServerNetworkStream.ReadByte());
+                    Server_DataReceived(bytesFromServer.ToArray());
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Read server: " + ex.ToString());
+                    ServerErrorReceived("Read server: " + ex);
                 }
-            }
 
             //send from server to client
             if (bytesFromServer.Count > 0)
-            {
                 try
                 {
                     ClientNetworkStream.Write(bytesFromServer.ToArray(), 0, bytesFromServer.Count);
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Send to client: " + ex.ToString());
+                    ClientErrorReceived("Send to client: " + ex);
                 }
-            }
         }
 
-        private void textBox_serverName_Leave(object sender, EventArgs e)
+        private void TextBox_serverName_Leave(object sender, EventArgs e)
         {
-            serverName = textBox_serverName.Text;
+            _serverName = textBox_serverName.Text;
             checkBox_ServerHex.Text = textBox_serverName.Text;
         }
 
-        private void textBox_clientName_Leave(object sender, EventArgs e)
+        private void TextBox_clientName_Leave(object sender, EventArgs e)
         {
-            clientName = textBox_clientName.Text;
+            _clientName = textBox_clientName.Text;
             checkBox_ClientHex.Text = textBox_clientName.Text;
         }
 
-        public bool ClientConnected()
+        private bool ClientConnected()
         {
-            IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
-            TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
-            foreach (TcpConnectionInformation c in tcpConnections)
+            var ipProperties = IPGlobalProperties.GetIPGlobalProperties();
+            var tcpConnections = ipProperties.GetActiveTcpConnections();
+            foreach (var c in tcpConnections)
             {
-                TcpState stateOfConnection = c.State;
+                var stateOfConnection = c.State;
                 try
                 {
-                    if (c.LocalEndPoint.Equals(ClientSocket.Client.LocalEndPoint) && c.RemoteEndPoint.Equals(ClientSocket.Client.RemoteEndPoint))
+                    if (c.LocalEndPoint.Equals(ClientSocket.Client.LocalEndPoint) &&
+                        c.RemoteEndPoint.Equals(ClientSocket.Client.RemoteEndPoint))
                     {
                         if (stateOfConnection == TcpState.Established)
-                        {
                             return true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    ClientErrorReceived("Socket closed: " + ex.ToString());
+                    ClientErrorReceived("Socket closed: " + ex);
                     return false;
                 }
             }
+
             return false;
         }
 
-        public bool ServerConnected()
+        private bool ServerConnected()
         {
-            IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
-            TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
-            foreach (TcpConnectionInformation c in tcpConnections)
+            var ipProperties = IPGlobalProperties.GetIPGlobalProperties();
+            var tcpConnections = ipProperties.GetActiveTcpConnections();
+            foreach (var c in tcpConnections)
             {
-                TcpState stateOfConnection = c.State;
+                var stateOfConnection = c.State;
                 try
                 {
-                    if (c.LocalEndPoint.Equals(ServerSocket.Client.LocalEndPoint) && c.RemoteEndPoint.Equals(ServerSocket.Client.RemoteEndPoint))
+                    if (c.LocalEndPoint.Equals(ServerSocket.Client.LocalEndPoint) &&
+                        c.RemoteEndPoint.Equals(ServerSocket.Client.RemoteEndPoint))
                     {
                         if (stateOfConnection == TcpState.Established)
-                        {
                             return true;
-                        }
-                        else
-                        {
-                            return false;
-                        }
+                        return false;
                     }
                 }
                 catch (Exception ex)
                 {
-                    ServerErrorReceived("Socket closed: " + ex.ToString());
+                    ServerErrorReceived("Socket closed: " + ex);
                     return false;
                 }
             }
+
             return false;
         }
-
     }
 }

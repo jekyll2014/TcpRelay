@@ -110,7 +110,7 @@ namespace TcpRelay
             this.button_start.TabIndex = 14;
             this.button_start.Text = "Start";
             this.button_start.UseVisualStyleBackColor = true;
-            this.button_start.Click += new System.EventHandler(this.button_start_Click);
+            this.button_start.Click += new System.EventHandler(this.Button_start_Click);
             // 
             // button_stop
             // 
@@ -122,7 +122,7 @@ namespace TcpRelay
             this.button_stop.TabIndex = 34;
             this.button_stop.Text = "Stop";
             this.button_stop.UseVisualStyleBackColor = true;
-            this.button_stop.Click += new System.EventHandler(this.button_stop_Click);
+            this.button_stop.Click += new System.EventHandler(this.Button_stop_Click);
             // 
             // button_clear
             // 
@@ -133,7 +133,7 @@ namespace TcpRelay
             this.button_clear.TabIndex = 30;
             this.button_clear.Text = "Clear";
             this.button_clear.UseVisualStyleBackColor = true;
-            this.button_clear.Click += new System.EventHandler(this.button_clear_Click);
+            this.button_clear.Click += new System.EventHandler(this.Button_clear_Click);
             // 
             // checkBox_insTime
             // 
@@ -166,7 +166,7 @@ namespace TcpRelay
             this.saveFileDialog.FileName = "terminal.txt";
             this.saveFileDialog.Filter = "Text files|*.txt|All files|*.*";
             this.saveFileDialog.RestoreDirectory = true;
-            this.saveFileDialog.FileOk += new System.ComponentModel.CancelEventHandler(this.saveFileDialog1_FileOk);
+            this.saveFileDialog.FileOk += new System.ComponentModel.CancelEventHandler(this.SaveFileDialog1_FileOk);
             // 
             // checkBox_insDir
             // 
@@ -238,7 +238,7 @@ namespace TcpRelay
             this.checkBox_Mark.Text = "Mark";
             this.checkBox_Mark.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.checkBox_Mark.UseVisualStyleBackColor = true;
-            this.checkBox_Mark.CheckedChanged += new System.EventHandler(this.checkBox_Mark_CheckedChanged);
+            this.checkBox_Mark.CheckedChanged += new System.EventHandler(this.CheckBox_Mark_CheckedChanged);
             // 
             // tabControl1
             // 
@@ -252,7 +252,7 @@ namespace TcpRelay
             this.tabControl1.SelectedIndex = 0;
             this.tabControl1.Size = new System.Drawing.Size(680, 244);
             this.tabControl1.TabIndex = 32;
-            this.tabControl1.Selecting += new System.Windows.Forms.TabControlCancelEventHandler(this.tabControl1_Selecting);
+            this.tabControl1.Selecting += new System.Windows.Forms.TabControlCancelEventHandler(this.TabControl1_Selecting);
             // 
             // tabPage1
             // 
@@ -287,7 +287,7 @@ namespace TcpRelay
             this.textBox_clientName.Size = new System.Drawing.Size(65, 20);
             this.textBox_clientName.TabIndex = 6;
             this.textBox_clientName.Text = "FN";
-            this.textBox_clientName.Leave += new System.EventHandler(this.textBox_clientName_Leave);
+            this.textBox_clientName.Leave += new System.EventHandler(this.TextBox_clientName_Leave);
             // 
             // textBox_serverName
             // 
@@ -298,7 +298,7 @@ namespace TcpRelay
             this.textBox_serverName.Size = new System.Drawing.Size(65, 20);
             this.textBox_serverName.TabIndex = 13;
             this.textBox_serverName.Text = "OFD";
-            this.textBox_serverName.Leave += new System.EventHandler(this.textBox_serverName_Leave);
+            this.textBox_serverName.Leave += new System.EventHandler(this.TextBox_serverName_Leave);
             // 
             // label9
             // 
@@ -393,21 +393,21 @@ namespace TcpRelay
             this.saveTXTToolStripMenuItem.Name = "saveTXTToolStripMenuItem";
             this.saveTXTToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.saveTXTToolStripMenuItem.Text = "Save .TXT";
-            this.saveTXTToolStripMenuItem.Click += new System.EventHandler(this.saveTXTToolStripMenuItem_Click);
+            this.saveTXTToolStripMenuItem.Click += new System.EventHandler(this.SaveTXTToolStripMenuItem_Click);
             // 
             // saveCSVToolStripMenuItem
             // 
             this.saveCSVToolStripMenuItem.Name = "saveCSVToolStripMenuItem";
             this.saveCSVToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.saveCSVToolStripMenuItem.Text = "Save .CSV";
-            this.saveCSVToolStripMenuItem.Click += new System.EventHandler(this.saveCSVToolStripMenuItem_Click);
+            this.saveCSVToolStripMenuItem.Click += new System.EventHandler(this.SaveCSVToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(125, 22);
             this.exitToolStripMenuItem.Text = "Exit";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -431,7 +431,7 @@ namespace TcpRelay
             this.logToGridToolStripMenuItem.Name = "logToGridToolStripMenuItem";
             this.logToGridToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
             this.logToGridToolStripMenuItem.Text = "Log to table";
-            this.logToGridToolStripMenuItem.Click += new System.EventHandler(this.logToGridToolStripMenuItem_Click);
+            this.logToGridToolStripMenuItem.Click += new System.EventHandler(this.LogToGridToolStripMenuItem_Click);
             // 
             // logToTextToolStripMenuItem
             // 
@@ -440,7 +440,7 @@ namespace TcpRelay
             this.logToTextToolStripMenuItem.Name = "logToTextToolStripMenuItem";
             this.logToTextToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
             this.logToTextToolStripMenuItem.Text = "Log to text";
-            this.logToTextToolStripMenuItem.Click += new System.EventHandler(this.logToTextToolStripMenuItem_Click);
+            this.logToTextToolStripMenuItem.Click += new System.EventHandler(this.LogToTextToolStripMenuItem_Click);
             // 
             // autoscrollToolStripMenuItem
             // 
@@ -450,7 +450,7 @@ namespace TcpRelay
             this.autoscrollToolStripMenuItem.Name = "autoscrollToolStripMenuItem";
             this.autoscrollToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
             this.autoscrollToolStripMenuItem.Text = "Autoscroll";
-            this.autoscrollToolStripMenuItem.Click += new System.EventHandler(this.autoscrollToolStripMenuItem_Click);
+            this.autoscrollToolStripMenuItem.Click += new System.EventHandler(this.AutoscrollToolStripMenuItem_Click);
             // 
             // lineWrapToolStripMenuItem
             // 
@@ -459,7 +459,7 @@ namespace TcpRelay
             this.lineWrapToolStripMenuItem.Name = "lineWrapToolStripMenuItem";
             this.lineWrapToolStripMenuItem.Size = new System.Drawing.Size(200, 22);
             this.lineWrapToolStripMenuItem.Text = "Line wrap";
-            this.lineWrapToolStripMenuItem.Click += new System.EventHandler(this.lineWrapToolStripMenuItem_Click);
+            this.lineWrapToolStripMenuItem.Click += new System.EventHandler(this.LineWrapToolStripMenuItem_Click);
             // 
             // autosaveTXTToolStripMenuItem1
             // 
@@ -470,7 +470,7 @@ namespace TcpRelay
             this.autosaveTXTToolStripMenuItem1.Name = "autosaveTXTToolStripMenuItem1";
             this.autosaveTXTToolStripMenuItem1.Size = new System.Drawing.Size(200, 22);
             this.autosaveTXTToolStripMenuItem1.Text = "Autosave .TXT";
-            this.autosaveTXTToolStripMenuItem1.Click += new System.EventHandler(this.autosaveTXTToolStripMenuItem1_Click);
+            this.autosaveTXTToolStripMenuItem1.Click += new System.EventHandler(this.AutosaveTXTToolStripMenuItem1_Click);
             // 
             // terminaltxtToolStripMenuItem1
             // 
@@ -487,7 +487,7 @@ namespace TcpRelay
             this.autosaveCSVToolStripMenuItem1.Name = "autosaveCSVToolStripMenuItem1";
             this.autosaveCSVToolStripMenuItem1.Size = new System.Drawing.Size(200, 22);
             this.autosaveCSVToolStripMenuItem1.Text = "Autosave .CSV";
-            this.autosaveCSVToolStripMenuItem1.Click += new System.EventHandler(this.autosaveCSVToolStripMenuItem1_Click);
+            this.autosaveCSVToolStripMenuItem1.Click += new System.EventHandler(this.AutosaveCSVToolStripMenuItem1_Click);
             // 
             // terminalcsvToolStripMenuItem1
             // 
@@ -515,14 +515,14 @@ namespace TcpRelay
             this.saveParametersToolStripMenuItem1.Name = "saveParametersToolStripMenuItem1";
             this.saveParametersToolStripMenuItem1.Size = new System.Drawing.Size(200, 22);
             this.saveParametersToolStripMenuItem1.Text = "Save parameters";
-            this.saveParametersToolStripMenuItem1.Click += new System.EventHandler(this.saveParametersToolStripMenuItem1_Click);
+            this.saveParametersToolStripMenuItem1.Click += new System.EventHandler(this.SaveParametersToolStripMenuItem1_Click);
             // 
             // aboutToolStripMenuItem
             // 
             this.aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
             this.aboutToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
             this.aboutToolStripMenuItem.Text = "About";
-            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
+            this.aboutToolStripMenuItem.Click += new System.EventHandler(this.AboutToolStripMenuItem_Click);
             // 
             // textBox_serverIP
             // 
@@ -541,7 +541,7 @@ namespace TcpRelay
             this.textBox_clientPort.Size = new System.Drawing.Size(62, 20);
             this.textBox_clientPort.TabIndex = 61;
             this.textBox_clientPort.Text = "19086";
-            this.textBox_clientPort.Leave += new System.EventHandler(this.textBox_clientPort_Leave);
+            this.textBox_clientPort.Leave += new System.EventHandler(this.TextBox_clientPort_Leave);
             // 
             // textBox_serverPort
             // 
@@ -551,7 +551,7 @@ namespace TcpRelay
             this.textBox_serverPort.Size = new System.Drawing.Size(62, 20);
             this.textBox_serverPort.TabIndex = 61;
             this.textBox_serverPort.Text = "19086";
-            this.textBox_serverPort.Leave += new System.EventHandler(this.textBox_serverPort_Leave);
+            this.textBox_serverPort.Leave += new System.EventHandler(this.TextBox_serverPort_Leave);
             // 
             // label1
             // 
@@ -565,7 +565,7 @@ namespace TcpRelay
             // 
             // timer1
             // 
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.timer1.Tick += new System.EventHandler(this.Timer1_Tick);
             // 
             // label2
             // 
